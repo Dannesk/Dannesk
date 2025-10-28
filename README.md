@@ -1,29 +1,43 @@
 # Dannesk
 
-Dannesk is a DeFi application for managing XRPL and Bitcoin wallets.
+![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)
+![Made with Rust](https://img.shields.io/badge/Made%20with-Rust-orange)
+
+**Dannesk** is a decentralized finance (DeFi) application that enables secure management and trading of XRPL and Bitcoin assets — fully client-side and built in Rust.
 
 ## Features
 
-- Create and import wallets for **Bitcoin** and **XRP Ledger (XRPL)**.
-- Trade stablecoins on XRPL's decentralized exchange (Dex), currently supporting RLUSD (Ripple) and EUROP (Schuman Financial).
-- User keys are securely stored in device-specific key storage:  
-  - Secure Enclave on macOS  
-  - Windows Credential Manager on Windows  
-  - Secret Service keyring on Linux  
-- All cryptographic operations, including transaction signing, happen **client-side**; the server only forwards encrypted data blobs.
-- Entire stack is built entirely in Rust for performance and security.
-- Frontend built with [egui](https://github.com/emilk/egui), a Rust GUI library.
+- Create and import wallets for Bitcoin and XRPL (XRP Ledger)
+- Trade stablecoins on XRPL's decentralized exchange (DEX)
+  - Supported assets: RLUSD (Ripple) and EUROP (Schuman Financial)
+- Client-side transaction signing for maximum security
+- AES-256 encrypted key storage and passphrase protection
+- Cold storage and full key management support
+- Built entirely in **Rust**, frontend powered by [egui](https://github.com/emilk/egui)
 
 ## Installation
 
-Download and install Dannesk from [dannesk.com](https://dannesk.com) by selecting your platform.
+Download and install Dannesk from [dannesk.com](https://dannesk.com).
+
+## Quick Start
+
+1. Launch Dannesk.
+2. Create or import a wallet (Bitcoin or XRPL).
+3. Trade stablecoins or manage your balances.
+4. All operations and signing occur locally on your device.
 
 ## Security
 
-- User keys are encrypted using AES-256 encryption and protected by the user’s passphrase.  
-- Even if device key storage is compromised, the encrypted keys cannot be accessed without the passphrase.  
-- All transaction signing is performed locally on the user's device to ensure privacy and security.
-- You can delete keys from your device by clicking **Delete** in the application.
+- Keys are encrypted locally with AES-256.
+- Passphrases never leave your device.
+- Verify checksums before running downloaded binaries.
+
+## Development
+
+```bash
+git clone https://github.com/yourusername/dannesk.git
+cd dannesk
+cargo build --release
 
 ## License
 
