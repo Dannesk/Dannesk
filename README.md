@@ -35,7 +35,7 @@ Download and install Dannesk from [dannesk.com](https://dannesk.com).
 ## Development
 
 ```bash
-git clone https://github.com/yourusername/dannesk.git
+git clone https://github.com/niminipiminy/dannesk.git
 cd dannesk
 cargo build --release
 
