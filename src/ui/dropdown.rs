@@ -16,7 +16,7 @@ pub fn render(ctx: &Context) -> Option<(bool, String, bool)> {
     );
 
     let (is_dark_mode, _, _) = CHANNEL.theme_user_rx.borrow().clone();
-    let text_color = if is_dark_mode {
+    let _text_color = if is_dark_mode {
         Color32::from_rgb(255, 254, 250)
     } else {
         Color32::from_rgb(34, 34, 34)

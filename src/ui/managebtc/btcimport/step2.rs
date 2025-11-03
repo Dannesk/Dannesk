@@ -13,7 +13,6 @@ use crate::channel::{BTCModalState, ProgressState, WSCommand, BTCImport, BTCActi
 use crate::encrypt::encrypt_data;
 use super::buffers;
 use zeroize::Zeroize;
-use crate::utils::json_storage;
 use tokio::sync::mpsc;
 
 pub fn render(ui: &mut Ui, import_state: &mut BTCImport, buffer_id: &str, commands_tx: mpsc::Sender<WSCommand>) {

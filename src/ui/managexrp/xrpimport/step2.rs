@@ -6,7 +6,6 @@ use crate::channel::{XRPModalState, ProgressState, WSCommand, XRPImport, ActiveV
 use crate::encrypt::encrypt_data;
 use super::{buffers, styles};
 use zeroize::Zeroize;
-use crate::utils::json_storage;
 use tokio::sync::mpsc;
 
 pub fn render(ui: &mut Ui, import_state: &mut XRPImport, buffer_id: &str, commands_tx: mpsc::Sender<WSCommand>) {

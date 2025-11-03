@@ -41,7 +41,7 @@ pub fn init_startup() {
 async fn fetch_version() -> Result<VersionResponse, reqwest::Error> {
     let client = Client::new();
     let response = client
-        .get("https://dannesk.pages.dev/version.json")
+        .get("")
         .send()
         .await?;
     let version_data: VersionResponse = response.json().await?;
