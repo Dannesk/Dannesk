@@ -3,11 +3,11 @@
 ![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)
 ![Made with Rust](https://img.shields.io/badge/Made%20with-Rust-orange)
 
-**Dannesk** is a decentralized finance (DeFi) application that enables secure management and trading of XRPL and Bitcoin assets — fully client-side and built in Rust.
+**Dannesk** is a decentralized finance (DeFi) application that enables secure management and trading of XRP and Bitcoin assets — fully client-side and built in Rust.
 
 ## Features
 
-- Create and import wallets for Bitcoin and XRPL (XRP Ledger)
+- Create and import wallets for Bitcoin and XRP (XRP Ledger)
 - Trade stablecoins on XRPL's decentralized exchange (DEX)
   - Supported assets: RLUSD (Ripple) and EUROP (Schuman Financial)
 - Client-side transaction signing for maximum security
