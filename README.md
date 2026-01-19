@@ -37,7 +37,7 @@ All keys, transactions, and cryptographic operations are handled directly on the
 - Native frontend powered by **Dioxus Blitz**
   - Experimental **wgpu + vello** rendering stack
 - Cryptography and transaction logic implemented in Rust
-- Designed for security, transparency, and native performance
+- Designed for security and transparency. 
 
 ---
 
