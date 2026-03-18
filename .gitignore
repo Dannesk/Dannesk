@@ -5,4 +5,4 @@ src/ws/connection.rs
 icons/
 src/ws/crypto.rs
 src/ws/rates.rs
-dannesk.desktop/
+dannesk.desktop
