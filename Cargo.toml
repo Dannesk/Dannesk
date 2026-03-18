@@ -1,0 +1,79 @@
+[package]
+name = "Dannesk"
+version = "0.3.0"
+edition = "2024"
+license = "GPL-3.0-or-later"
+description = "DeFi wallet for XRPL and Bitcoin."
+
+[dependencies]
+dioxus-native = { git = "https://github.com/niminypiminy/blitz_fork", branch = "main", features = ["prelude", "autofocus"] }
+winit = "0.31.0-beta.2"
+winit-core = "0.31.0-beta.2"
+xrpl-rust = "1.0.0"
+ripple-address-codec = "0.1.1"
+rippled_binary_codec = "0.0.5"
+chrono = "0.4.43"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.132"
+tokio = { version = "1.49.0", features = ["full"] }
+tokio-tungstenite = { version = "0.28.0", features = ["rustls-tls-native-roots"] }
+futures-util = "0.3.32"  # For StreamExt and SinkExt
+uuid = { version = "1.21", features = ["v4"] }
+zeroize = { version = "1.8.2", features = ["derive", "serde"] }
+bitcoin = "0.32.8" 
+secp256k1 = "0.31.1" 
+bip39 = "2.2.2"
+aes-gcm = "0.10.3"
+rand = "0.10.0"
+base64 = "0.22.1"
+argon2 = "0.5.3"
+dirs = "6.0.0"
+reqwest = { version = "0.13.2", default-features = false, features = ["json", "rustls-no-provider"] }
+critical-section = { version = "1.1.1", features = ["std"] }
+qrcode = "0.14.1"
+image = { version = "0.25.6", default-features = false } 
+mimalloc = { version = "0.1.48", optional = true }
+rustls = { version = "0.23", default-features = false, features = ["ring"] }
+
+[features]
+default = ["mimalloc"]
+mimalloc = ["dep:mimalloc"]
+
+[target.'cfg(not(target_os = "linux"))'.dependencies]
+arboard = "3.6.1"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+winit-x11 = "0.31.0-beta.2"
+winit-wayland = "0.31.0-beta.2"
+arboard = { version = "3.6.1", features = ["wayland-data-control"] }
+
+[profile.release]
+strip = true         
+lto = true           
+codegen-units = 1     
+panic = "abort"       
+opt-level = "z"       
+
+
+[target.'cfg(windows)'.build-dependencies]
+winres = "0.1"
+
+[package.metadata.deb]
+maintainer = "Dannesk <none@example.com>"
+copyright = "2026, Dannesk"
+section = "utils"
+priority = "optional"
+depends = "$auto"
+revision = ""          # ← add this (empty string = no -1 suffix)
+
+
+assets = [
+    ["target/release/Dannesk", "usr/bin/Dannesk", "755"],
+    ["dannesk.desktop", "usr/share/applications/dannesk.desktop", "644"],
+    ["icons/hicolor/16x16/apps/dannesk.png",   "usr/share/icons/hicolor/16x16/apps/dannesk.png",   "644"],
+    ["icons/hicolor/32x32/apps/dannesk.png",   "usr/share/icons/hicolor/32x32/apps/dannesk.png",   "644"],
+    ["icons/hicolor/64x64/apps/dannesk.png",   "usr/share/icons/hicolor/64x64/apps/dannesk.png",   "644"],
+    ["icons/hicolor/128x128/apps/dannesk.png", "usr/share/icons/hicolor/128x128/apps/dannesk.png", "644"],
+    ["icons/hicolor/256x256/apps/dannesk.png", "usr/share/icons/hicolor/256x256/apps/dannesk.png", "644"],
+    ["icons/hicolor/512x512/apps/dannesk.png", "usr/share/icons/hicolor/512x512/apps/dannesk.png", "644"],
+]
