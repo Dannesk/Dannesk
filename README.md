@@ -18,7 +18,7 @@ Users may create a new wallet or import an existing one for:
 - **Bitcoin**
 - **XRP**
 
-Additionally, users may enable trustlines, and trade currencies for a fraction of a cent on the **XRPL native order book (CLOB)**.
+Additionally, users may enable trustlines and trade currencies for a fraction of a cent on the **XRPL native order book (CLOB)**.
 Swaps are atomic, and occur **directly on-chain** with no centralized intermediary.
 
 Supported assets include:
@@ -43,13 +43,12 @@ Transactions are **signed locally**. The signed transaction blob is then **broad
 
 ### Beta 
 
-The app is already robust, with most of the basic features users will need. However, it's still lacking a number of intermediate/advanced features such as "replace by fee" for Bitcoin, disabling
+The desktop app is already very capable with most of the basic features users will need. However, it's still lacking intermediate features such as "replace by fee" (Bitcoin), disabling
 a trustline (XRP), and converting small balances (sometimes referred to as dust). 
 
 The mobile app is not yet ready for production. 
 
-There are also advanced features we are implementing such as a federated bridge between XRP/BTC, allowing for decentralized swaps between the two chains. 
-Fiat onboarding is also on the roadmap. 
+We also hope to implement a few advanced features before v1.0.0 such as a federated bridge between XRP/BTC, allowing for decentralized swaps between the two chains. Fiat onboarding is also on the roadmap. 
 
 We aim to release v1.0.0 for all platforms by the second quarter of 2027. 
   
