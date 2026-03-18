@@ -5,8 +5,7 @@
 [![UI: Dioxus](https://img.shields.io/badge/UI-Dioxus-6f42c1)](https://dioxuslabs.com/)
 [![Graphics: wgpu](https://img.shields.io/badge/Graphics-wgpu-1f425f)](https://wgpu.rs/)
 
-Dannesk is a non-custodial DeFi wallet for **Bitcoin** and the **XRP Ledger**. The app gives users complete control over their private keys while enabling powerful trading capabilities on **XRPL’s native CLOB**.
-The app is built in Rust for security and reliability. 
+Dannesk is a non-custodial DeFi wallet for **Bitcoin** and the **XRP Ledger**. Built in Rust for security and reliability, the app gives users complete control over their private keys, while enabling powerful trading capabilities on **XRPL’s native CLOB**. 
 
 ---
 
@@ -14,13 +13,13 @@ The app is built in Rust for security and reliability.
 
 ### Multi-Chain Wallet
 
-Users can create a new wallet or import an existing one for:
+Users may create a new wallet or import an existing one for:
 
 - **Bitcoin**
 - **XRP**
 
-Additionally, users can make swaps on the **XRPL native order book (CLOB)**.
-Swaps occur **directly on-chain** with no centralized intermediary.
+Additionally, users may enable trustlines, and trade currencies for a fraction of a cent on the **XRPL native order book (CLOB)**.
+Swaps are atomic, and occur **directly on-chain** with no centralized intermediary.
 
 Supported assets include:
 
@@ -34,14 +33,25 @@ Supported assets include:
 
 ### Security
 
-- Dannesk supports the optional BIP39 passphrase (sometimes called the 25th word).
-- The 25th word allows for enhanced wallet security and the deterministic generation of multiple wallets from the same seed. 
-- Wallet keys are encrypted and decrypted locally on the user’s device using AES-256 encryption. Only the user knows their decryption passphrase. 
-- We use **Argon2id** for key derivation.  
-- Users can remove encrypted keys with one-click. 
-- Transactions are **signed locally on the user's device**.
-- The signed transaction blob is then **broadcast to the network**.
-- Memory is cleared **zeroized** after signing operations.
+Dannesk supports the optional BIP39 passphrase (sometimes called the 25th word). The 25th word allows for enhanced wallet security and the deterministic generation of multiple wallets from the same seed. 
+
+Upon import/create, users are prompted to choose their own encryption passphrase and bip39 passphrase. The private keys are then encrypted locally on the user’s device using AES-256 encryption and Argon2id for key derivation. Users may choose to remove the key by clicking "delete key" on the dashboard, reverting to cold storage.
+
+Transactions are **signed locally**. The signed transaction blob is then **broadcast to the network**. For added security, memory is also **zeroized** after signing operations. At no time does any sensitive data leave the user's device. 
+  
+---
+
+### Beta 
+
+The app is already robust, with most of the basic features users will need. However, it's still lacking a number of intermediate/advanced features such as "replace by fee" for Bitcoin, disabling
+a trustline (XRP), and converting small balances (sometimes referred to as dust). 
+
+The mobile app is not yet ready for production. 
+
+There are also advanced features we are implementing such as a federated bridge between XRP/BTC, allowing for decentralized swaps between the two chains. 
+Fiat onboarding is also on the roadmap. 
+
+We aim to release v1.0.0 for all platforms by the second quarter of 2027. 
   
 ---
 
