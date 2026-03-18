@@ -6,7 +6,7 @@ use dioxus_native::prelude::*;
 pub fn render_theme_toggle() -> Element {
     let global = use_context::<GlobalContext>();
     let (is_dark, hide_balance) = *global.theme_user.read();
-    let label = if is_dark { "MODE_DRK" } else { "MODE_LGT" };
+    let label = if is_dark { "LIGHT" } else { "DARK" };
 
     sidebar_action(label, is_dark, move |_| {
         let _ = CHANNEL.theme_user_tx.send((!is_dark, hide_balance));

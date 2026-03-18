@@ -104,7 +104,7 @@ const STYLE: &str = r#"
     .group-title { font-size: 0.65rem; color: var(--text); border-left: 2px solid var(--accent); padding-left: 8px; letter-spacing: 1px; margin-bottom: 0.75rem; white-space: nowrap; }
     .market-row { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 4px; padding: 0.75rem 1rem; gap: 1.5rem; display: flex; justify-content: space-between; align-items: center; }
     .market-name { font-size: 0.85rem; color: var(--text-secondary);  white-space: nowrap; flex-shrink: 0; }
-    .market-value { font-size: 0.92rem; color: var(--text-secondary);  font-weight: 600; text-align: right; white-space: nowrap; }
+    .market-value { font-size: 0.92rem; color: var(--text);  font-weight: 600; text-align: right; white-space: nowrap; }
 "#;
 
 #[component]
