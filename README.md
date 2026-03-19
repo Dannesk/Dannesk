@@ -4,7 +4,7 @@
 [![Made with Rust](https://img.shields.io/badge/Made%20with-Rust-orange)](https://www.rust-lang.org/)
 [![UI: Dioxus](https://img.shields.io/badge/UI-Dioxus-6f42c1)](https://dioxuslabs.com/)
 [![Graphics: wgpu](https://img.shields.io/badge/Graphics-wgpu-1f425f)](https://wgpu.rs/)
-[![Dannesk](https://img.shields.io/badge/Dannesk-334155)](https://dannesk.com)
+[![App: Dannesk](https://img.shields.io/badge/App-Dannesk-334155)](https://dannesk.com)
 
 Dannesk is a non-custodial DeFi wallet for **Bitcoin** and the **XRP Ledger**. Built in Rust for security and reliability, the app gives users complete control over their private keys, while enabling powerful trading capabilities on **XRPL’s native CLOB**. 
 
