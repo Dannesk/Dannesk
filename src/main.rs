@@ -1,6 +1,6 @@
 //#![cfg_attr(windows, windows_subsystem = "windows")]
 
-const VERSION: &str = "0.3.0";
+const VERSION: &str = "0.3.1";
 
 use dioxus_native::prelude::*;
 use std::any::Any;
