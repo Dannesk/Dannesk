@@ -90,7 +90,7 @@ pub fn UpdatePrompt() -> Element {
 
                 div {
                     style: "font-size: 0.9rem; color: var(--text-secondary);",
-                    "A newer build of Dannesk Core is ready for download."
+                    "A newer build of Dannesk is ready for download."
                 }
 
                 div { class: "version-compare",

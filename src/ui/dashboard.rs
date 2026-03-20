@@ -1,4 +1,4 @@
-use crate::channel::{SideBarView, Tab};
+use crate::channel::{SideBarView, Tab, Theme};  // ← added Theme
 use crate::context::GlobalContext;
 use crate::ui::{
     balance, changepin, managebtc, managexrp, networkstatus, progressbar::ProgressBar, sidebar,
@@ -27,6 +27,7 @@ pub fn render_dashboard() -> Element {
     }
 }
 
+// MainViewSlot and TabContentSlot unchanged
 #[component]
 fn MainViewSlot() -> Element {
     let global = use_context::<GlobalContext>();
@@ -67,12 +68,14 @@ fn BottomDock() -> Element {
     let global = use_context::<GlobalContext>();
     let sidebar_view = global.sidebar_view.read();
     let current_tab = *global.selected_tab.read();
-    let is_dark = global.theme_user.read().0;
+
+    // ← NEW: proper destructuring (same pattern as sidebar.rs)
+    let (theme, _) = *global.theme_user.read();
+    let is_dark = matches!(theme, Theme::Dark);
 
     let dock_bg = if is_dark { "#000000" } else { "#f8fafc" };
 
     if *sidebar_view != SideBarView::None {
-        // Correct way to return "nothing" in Dioxus components
         return rsx! {};
     }
 

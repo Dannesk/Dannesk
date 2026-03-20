@@ -14,8 +14,6 @@ Dannesk is a non-custodial DeFi wallet for **Bitcoin** and the **XRP Ledger**. B
 
 ---
 
-## Features
-
 ### Multi-Chain Wallet
 
 Users may create a new wallet or import an existing one for:

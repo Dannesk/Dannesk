@@ -18,8 +18,8 @@ pub struct Channel {
     pub rates_rx: watch::Receiver<HashMap<String, f32>>,
     pub selected_tab_tx: watch::Sender<Tab>,
     pub selected_tab_rx: watch::Receiver<Tab>,
-    pub theme_user_tx: watch::Sender<(bool, bool)>,
-    pub theme_user_rx: watch::Receiver<(bool, bool)>,
+    pub theme_user_tx: watch::Sender<(Theme, bool)>,  
+    pub theme_user_rx: watch::Receiver<(Theme, bool)>, 
     pub progress_tx: watch::Sender<Option<ProgressState>>,
     pub progress_rx: watch::Receiver<Option<ProgressState>>,
     pub version_tx: watch::Sender<Option<String>>,
@@ -69,7 +69,7 @@ pub struct Channel {
 impl Channel {
     pub fn new() -> Self {
         //global related
-        let (theme_user_tx, theme_user_rx) = watch::channel((false, false));
+        let (theme_user_tx, theme_user_rx) = watch::channel((Theme::Dark, false)); 
         let (rates_tx, rates_rx) = watch::channel(HashMap::new());
         let (selected_tab_tx, selected_tab_rx) = watch::channel(Tab::Balance);
         let (progress_tx, progress_rx) = watch::channel(None);

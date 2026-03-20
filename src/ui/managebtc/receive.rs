@@ -2,6 +2,8 @@
 use crate::context::{BtcContext, GlobalContext};
 use crate::utils::receive_layout::ReceiveAddressLayout;
 use dioxus_native::prelude::*;
+use crate::channel::Theme;
+
 
 #[component]
 pub fn view() -> Element {
@@ -10,7 +12,8 @@ pub fn view() -> Element {
 
     let (_, address_opt, _) = btc_ctx.bitcoin_wallet.read().clone();
     let address = address_opt.unwrap_or_else(|| "No Address".to_string());
-    let is_dark = global.theme_user.read().0;
+      let (theme, _) = *global.theme_user.read();
+    let is_dark = matches!(theme, Theme::Dark);
 
     rsx! {
         ReceiveAddressLayout {

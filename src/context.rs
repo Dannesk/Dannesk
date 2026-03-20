@@ -1,6 +1,6 @@
 // src/context.rs
 use crate::channel::{
-    BtcModalState, BtcSignTransactionState, BtcTransactionState, BtcWalletProcessState, CHANNEL,
+    BtcModalState, BtcSignTransactionState, BtcTransactionState, Theme, BtcWalletProcessState, CHANNEL,
     ProgressState, SideBarView, SignTradeState, SignTransactionState, Tab, TransactionState,
     WSCommand, XrpModalState, XrpWalletProcessState,
 };
@@ -13,7 +13,7 @@ use tokio::sync::watch; // Receiver
 
 #[derive(Clone)]
 pub struct GlobalContext {
-    pub theme_user: Signal<(bool, bool)>,
+    pub theme_user: Signal<(Theme, bool)>,
     pub rates: Signal<HashMap<String, f32>>,
     pub selected_tab: Signal<Tab>,
     pub progress: Signal<Option<ProgressState>>,

@@ -1,26 +1,28 @@
-use crate::channel::{CHANNEL, SideBarView};
+use crate::channel::{CHANNEL, SideBarView, Theme};
 use crate::context::GlobalContext;
 use crate::utils::styles::sidebar_action;
 use dioxus_native::prelude::*;
 
 pub fn render_theme_toggle() -> Element {
     let global = use_context::<GlobalContext>();
-    let (is_dark, hide_balance) = *global.theme_user.read();
+    let (theme, hide_balance) = *global.theme_user.read();
+    let is_dark = matches!(theme, Theme::Dark);
     let label = if is_dark { "LIGHT" } else { "DARK" };
 
     sidebar_action(label, is_dark, move |_| {
-        let _ = CHANNEL.theme_user_tx.send((!is_dark, hide_balance));
+        let new_theme = if is_dark { Theme::Light } else { Theme::Dark };
+        let _ = CHANNEL.theme_user_tx.send((new_theme, hide_balance));
     })
 }
 
 pub fn render_balance_toggle() -> Element {
     let global = use_context::<GlobalContext>();
-    let (is_dark, hide_balance) = *global.theme_user.read();
+    let (theme, hide_balance) = *global.theme_user.read();
     let is_visible = !hide_balance;
     let label = if is_visible { "HIDE" } else { "REVEAL" };
 
     sidebar_action(label, is_visible, move |_| {
-        let _ = CHANNEL.theme_user_tx.send((is_dark, !hide_balance));
+        let _ = CHANNEL.theme_user_tx.send((theme, !hide_balance));
     })
 }
 

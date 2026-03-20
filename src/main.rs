@@ -26,16 +26,18 @@ mod ui;
 mod utils;
 mod wallet;
 mod ws;
+mod enterpin; 
+mod update; 
 
-use crate::channel::WSCommand;
+use crate::channel::{WSCommand, Theme};
 use crate::context::GlobalContext;
 #[cfg(target_os = "windows")]
 use crate::icon::load_icon;
 use crate::startup::init_startup;
 use crate::theme::{DARK_CSS, LIGHT_CSS};
-use crate::ui::enterpin::PinScreen;
-use crate::ui::update::UpdatePrompt;
 use crate::ws::{run_crypto_websocket, run_exchange_websocket};
+use crate::update::UpdatePrompt;
+use crate::enterpin::PinScreen;
 
 static UI_COMMANDS_TX: OnceLock<mpsc::Sender<WSCommand>> = OnceLock::new();
 
@@ -162,8 +164,9 @@ fn App() -> Element {
         .clone();
     context::setup_contexts(tx);
 
-    let global = use_context::<GlobalContext>();
-    let is_dark = global.theme_user.read().0;
+   let global = use_context::<GlobalContext>();
+    let (theme, _hide_balance) = *global.theme_user.read();
+    let is_dark = matches!(theme, Theme::Dark);
 
     // Track if the user has successfully unlocked the PIN
     let mut unlocked = use_signal(|| false);

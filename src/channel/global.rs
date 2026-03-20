@@ -7,6 +7,12 @@ pub enum Tab {
     Btc,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Theme {
+    Light,
+    Dark,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Copy)]
 pub enum SideBarView {
     None,

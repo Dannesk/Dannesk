@@ -1,3 +1,4 @@
+use dioxus_native::prelude::*;
 use crate::context::{GlobalContext, XrpContext};
 use crate::ui::managexrp::xrpbalance::wallet_operations::WalletOperations;
 use crate::utils::add_commas;
@@ -5,7 +6,8 @@ use crate::utils::balance_layout::{BalanceLayout, LedgerInfo};
 use crate::utils::reserves::XrpBalanceInfo;
 use crate::utils::styles::terminal_action;
 use crate::utils::xrp::{XrpLogo, XrpLogoWhite};
-use dioxus_native::prelude::*;
+use crate::channel::Theme;
+
 
 pub mod wallet_operations;
 
@@ -20,7 +22,8 @@ pub fn render_xrp_balance() -> Element {
     let (xrp_amount, address, key_is_deleted) = xrp_ctx.wallet_balance.read().clone();
 
     // --- THEME CHECK ---
-    let (is_dark, hide_balance) = *global.theme_user.read();
+   let (theme, hide_balance) = *global.theme_user.read();
+    let is_dark = matches!(theme, Theme::Dark);
 
     let xrp_reserve_info = use_context::<Memo<XrpBalanceInfo>>();
 
