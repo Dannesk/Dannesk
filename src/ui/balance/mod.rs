@@ -17,18 +17,9 @@ pub fn render_balance() -> Element {
                 font-family: 'JetBrains Mono', monospace;
               
             }
-            .balance-label {
-                font-size: 1.5rem;
-                color: var(--text-secondary);
-                letter-spacing: 1px;
-                margin-bottom: 10px;
-                white-space: nowrap;
-                border-bottom: 1px solid var(--border);
-
-            }
             .total-amount {
                 margin: 0;
-                font-size: clamp(3.8rem, 8.5vw, 6.8rem);
+                font-size: clamp(4.5rem, 10.5vw, 7rem);
                 font-weight: 800;
                 display: flex;
                 align-items: baseline;
@@ -40,7 +31,7 @@ pub fn render_balance() -> Element {
         "#} }
 
         div { class: "balance-container",
-            div { class: "balance-label", "TOTAL_VALUATION" }
+          
 
             // This is the optimized leaf component
             BalanceDisplay {}

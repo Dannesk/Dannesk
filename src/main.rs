@@ -1,4 +1,4 @@
-//#![cfg_attr(windows, windows_subsystem = "windows")]
+#![cfg_attr(windows, windows_subsystem = "windows")] // hide console on windows
 
 const VERSION: &str = "0.3.1";
 
