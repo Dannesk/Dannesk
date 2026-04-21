@@ -5,7 +5,6 @@ use crate::utils::styles;
 use arboard::Clipboard;
 use dioxus_native::prelude::*;
 
-pub mod btcimportlogic;
 pub mod step1;
 pub mod step2;
 

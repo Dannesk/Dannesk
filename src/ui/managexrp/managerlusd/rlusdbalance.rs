@@ -4,7 +4,7 @@
 use crate::context::{GlobalContext, RlusdContext, XrpContext};
 use crate::utils::add_commas;
 use crate::utils::styles::terminal_action;
-use crate::utils::token_layout::TokenLayout;
+use crate::ui::components::token_layout::TokenLayout;
 use dioxus_native::prelude::*; // MATCHED NAME
 
 pub fn render_rlusd_balance() -> Element {

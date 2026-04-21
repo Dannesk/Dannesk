@@ -35,23 +35,3 @@ pub fn render_pin_button() -> Element {
         let _ = CHANNEL.sidebar_view_tx.send(SideBarView::ChangePin);
     })
 }
-
-pub fn render_rates_button() -> Element {
-    let global = use_context::<GlobalContext>();
-    let sidebar_view = *global.sidebar_view.read();
-    let is_active = sidebar_view == SideBarView::ExchangeRates;
-
-    sidebar_action("RATES", is_active, move |_| {
-        let _ = CHANNEL.sidebar_view_tx.send(SideBarView::ExchangeRates);
-    })
-}
-
-pub fn render_network_button() -> Element {
-    let global = use_context::<GlobalContext>();
-    let sidebar_view = *global.sidebar_view.read();
-    let is_active = sidebar_view == SideBarView::NetworkStatus;
-
-    sidebar_action("NETWORK", is_active, move |_| {
-        let _ = CHANNEL.sidebar_view_tx.send(SideBarView::NetworkStatus);
-    })
-}

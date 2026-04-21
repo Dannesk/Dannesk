@@ -15,8 +15,8 @@ rippled_binary_codec = "0.0.5"
 chrono = "0.4.43"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.132"
-tokio = { version = "1.49.0", features = ["full"] }
-tokio-tungstenite = { version = "0.28.0", features = ["rustls-tls-native-roots"] }
+tokio = { version = "1.50.0", features = ["full"] }
+tokio-tungstenite = { version = "0.29.0", features = ["rustls-tls-native-roots"] }
 futures-util = "0.3.32"  # For StreamExt and SinkExt
 uuid = { version = "1.21", features = ["v4"] }
 zeroize = { version = "1.8.2", features = ["derive", "serde"] }
@@ -34,10 +34,14 @@ qrcode = "0.14.1"
 image = { version = "0.25.6", default-features = false } 
 mimalloc = { version = "0.1.48", optional = true }
 rustls = { version = "0.23", default-features = false, features = ["ring"] }
+sha2 = "0.11.0"
 
 [features]
 default = ["mimalloc"]
 mimalloc = ["dep:mimalloc"]
+
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.58", features = ["Win32_UI_HiDpi"] }
 
 [target.'cfg(not(target_os = "linux"))'.dependencies]
 arboard = "3.6.1"
@@ -57,6 +61,7 @@ opt-level = "z"
 
 [target.'cfg(windows)'.build-dependencies]
 winres = "0.1"
+
 
 [package.metadata.deb]
 maintainer = "Dannesk <none@example.com>"

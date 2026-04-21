@@ -2,8 +2,8 @@
 //dependent upon utils/auth_layout.rs
 
 use crate::context::{GlobalContext, XrpContext};
-use crate::ui::managexrp::xrpsend::sendlogic::{SendParams, XRPSendLogic};
-use crate::utils::send_auth_layout::SendAuthForm;
+use crate::bridge::xrp_send_logic::{SendParams, XRPSendLogic};
+use crate::ui::components::send_auth_layout::SendAuthForm;
 use dioxus_native::prelude::*;
 
 #[component]

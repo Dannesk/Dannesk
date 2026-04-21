@@ -2,7 +2,7 @@
 //dependent upon utils/send_amount_layout
 
 use crate::context::{BtcContext, GlobalContext};
-use crate::utils::send_amount_layout::SendAmountForm;
+use crate::ui::components::send_amount_layout::SendAmountForm;
 use crate::utils::{format_token_amount, format_usd};
 use dioxus_native::prelude::*;
 

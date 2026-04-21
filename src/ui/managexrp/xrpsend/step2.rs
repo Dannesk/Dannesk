@@ -5,7 +5,7 @@
 
 use crate::context::{EuroContext, GlobalContext, RlusdContext, SgdContext, XrpContext};
 use crate::utils::reserves::XrpBalanceInfo;
-use crate::utils::send_amount_layout::SendAmountForm;
+use crate::ui::components::send_amount_layout::SendAmountForm;
 use crate::utils::{SendAsset, format_token_amount, format_usd};
 use dioxus_native::prelude::*;
 

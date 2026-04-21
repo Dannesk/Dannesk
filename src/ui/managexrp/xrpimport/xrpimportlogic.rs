@@ -4,7 +4,7 @@ use crate::channel::{
     ActiveView, CHANNEL, ProgressState, WSCommand, XrpModalState, XrpWalletProcessState,
 };
 use crate::encrypt::encrypt_data;
-use crate::utils::json_storage::write_json; // Use your utility
+use crate::utils::json_storage::write_json; 
 use arboard::Clipboard;
 use bip39::{Language, Mnemonic};
 use ripple_address_codec::{Ed25519, encode_seed};
@@ -95,7 +95,7 @@ impl XRPImportLogic {
                 }
 
                 let _ = ws_tx.try_send(WSCommand {
-                    command: "import_wallet".to_string(), // Backend likely expects this for XRP
+                    command: "import_wallet".to_string(), 
                     wallet: Some(address),
                     recipient: None,
                     amount: None,

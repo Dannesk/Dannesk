@@ -1,5 +1,5 @@
-// src//ui/enterpin.rs
-use crate::utils::json_storage;
+// src/ui/enterpin.rs
+use crate::bridge::json_storage;
 use dioxus_native::prelude::*;
 
 #[derive(Clone, Copy, PartialEq)]
@@ -17,26 +17,24 @@ pub fn PinScreen(on_unlock: EventHandler<()>) -> Element {
     let mut attempts_left = use_signal(|| 5);
     let mut is_processing = use_signal(|| false);
 
-    let pin_exists =
-        use_memo(|| json_storage::read_json::<crate::pin::PinData>("pin.json").is_ok());
+    let pin_exists = use_memo(|| json_storage::read_json::<crate::pin::PinData>("pin.json").is_ok());
 
     let state = use_memo(move || {
         if !pin_exists() {
-            if stored_pin_for_confirmation().is_empty() {
-                PinState::Set
-            } else {
-                PinState::Confirm
-            }
+            if stored_pin_for_confirmation().is_empty() { PinState::Set } else { PinState::Confirm }
         } else {
             PinState::Enter
         }
     });
 
+    let prompt = match state() {
+        PinState::Set => "CREATE PIN:",
+        PinState::Confirm => "CONFIRM PIN:",
+        PinState::Enter => "ENTER PIN:",
+    };
+
     let mut run_submit = move || {
-        // Check is_processing at the very start of the sync block
-        if *is_processing.peek() || input.peek().is_empty() {
-            return;
-        }
+        if *is_processing.peek() || input.peek().is_empty() { return; }
         is_processing.set(true);
 
         let pin = input.read().clone();
@@ -44,9 +42,6 @@ pub fn PinScreen(on_unlock: EventHandler<()>) -> Element {
         let stored_pin = stored_pin_for_confirmation.read().clone();
 
         spawn(async move {
-            // Short breath to ensure the 6th digit renders
-            tokio::time::sleep(std::time::Duration::from_millis(20)).await;
-
             match current_state {
                 PinState::Set => {
                     stored_pin_for_confirmation.set(pin);
@@ -55,14 +50,10 @@ pub fn PinScreen(on_unlock: EventHandler<()>) -> Element {
                 }
                 PinState::Confirm => {
                     if pin == stored_pin {
-                        if crate::pin::set_pin(&pin).is_ok() {
-                            on_unlock.call(());
-                        } else {
-                            error_msg.set(Some("ERR: STORAGE_IO_FAILURE".to_string()));
-                            input.set(String::new());
-                        }
+                        let _ = crate::pin::set_pin(&pin);
+                        on_unlock.call(());
                     } else {
-                        error_msg.set(Some("ERR: BUFFER_MISMATCH".to_string()));
+                        error_msg.set(Some("MISMATCH".to_string()));
                         stored_pin_for_confirmation.set(String::new());
                         input.set(String::new());
                     }
@@ -74,11 +65,7 @@ pub fn PinScreen(on_unlock: EventHandler<()>) -> Element {
                         let left = *attempts_left.peek() - 1;
                         attempts_left.set(left);
                         input.set(String::new());
-                        error_msg.set(Some(if left == 0 {
-                            "CRITICAL: SYSTEM_LOCKOUT".into()
-                        } else {
-                            format!("AUTH_ERR: {} ATTEMPTS REMAINING", left)
-                        }));
+                        error_msg.set(Some(format!("DENIED: {} LEFT", left)));
                     }
                 }
             }
@@ -86,205 +73,79 @@ pub fn PinScreen(on_unlock: EventHandler<()>) -> Element {
         });
     };
 
-    let mut add_digit = move |digit: char| {
-        if input.read().len() < 6 && !*is_processing.read() {
-            input.with_mut(|s| s.push(digit));
-            if input.read().len() == 6 {
-                run_submit();
-            }
-        }
-    };
-
     rsx! {
         style { {r#"
-            .pin-page {
+            .pin-container {
                 height: 100vh;
                 display: flex;
+                flex-direction: column;
                 align-items: center;
                 justify-content: center;
-                background: var(--bg-primary); /* Swapped from #050505 */
+                background: var(--bg-primary);
                 font-family: 'JetBrains Mono', monospace;
                 color: var(--text);
             }
 
-            .terminal-frame {
+            .input-row {
                 display: flex;
-                flex-direction: column;
-                border: 1px solid var(--border);
-                background: var(--bg-secondary); /* Swapped from #0a0a0a */
-                padding: 2rem;
-                width: 320px;
-                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); /* Added slight shadow for depth on light bg */
-            }
-
-            .terminal-header {
-                font-size: 0.7rem;
-                color: var(--text-accent); /* Changed from --accent for better contrast */
-                letter-spacing: 2px;
-                margin-bottom: 2rem;
-                border-bottom: 1px solid var(--border); /* Swapped from rgba white */
-                padding-bottom: 0.5rem;
-                text-align: center;
-            }
-
-            .main-layout {
-                display: flex;
-                flex-direction: column;
+                flex-direction: row;
                 align-items: center;
-                gap: 1.5rem;
+                /* Increased gap to stop the visual bleed */
+                gap: 2rem; 
             }
 
-            .status-panel {
-                width: 100%;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                min-height: 80px;
+            .prompt {
+                font-size: 0.9rem;
+                color: var(--text-secondary);
+                /* Fixed width ensures the input doesn't jump when text changes */
+                width: 120px;
+                text-align: right;
             }
 
-            .terminal-input-wrapper {
-                display: flex;
-                align-items: center;
-                background: var(--input-bg); /* Swapped from rgba white */
-                border: 1px solid var(--border);
-                padding: 0.8rem;
-                width: 100%;
-                box-sizing: border-box;
-                height: 54px;
-            }
-
-            .loading-text {
-                flex: 1;
-                text-align: center;
-                font-size: 0.8rem;
-                color: var(--text-accent);
-            }
-
-            @keyframes pulse {
-                0% { opacity: 1; }
-                50% { opacity: 0.4; }
-                100% { opacity: 1; }
-            }
-
-            .bracket { 
-                color: var(--text-secondary); 
-                opacity: 0.4; 
-                font-size: 1.2rem; 
-                font-weight: bold;
-            }
-            
-            .pin-field {
-                flex: 1;
+            .pin-input {
                 background: transparent;
+                /* Removed border from the row, moved it here */
                 border: none;
+                border-bottom: 1px solid var(--border);
                 outline: none;
-                color: var(--text);
+                color: var(--text-accent);
                 font-family: inherit;
-                font-size: 1.4rem;
+                font-size: 1.2rem;
                 letter-spacing: 0.5rem;
-                text-align: center;
+                width: 140px;
+                padding-bottom: 4px;
             }
 
-            .status-msg {
-                margin-top: 0.5rem;
-                font-size: 0.6rem;
+            .error {
+                margin-top: 20px;
+                font-size: 0.7rem;
                 color: var(--status-warn);
-                min-height: 1rem;
-                text-align: center;
-            }
-
-            .keypad {
-                display: grid;
-                grid-template-columns: repeat(3, 1fr);
-                gap: 8px;
-                width: 100%;
-                transition: opacity 0.3s ease;
-            }
-
-            .keypad.processing {
-                opacity: 0.3;
-                pointer-events: none;
-            }
-
-            .num-key {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                background: var(--bg-faint); /* Swapped from rgba white */
-                border: 1px solid var(--border);
-                color: var(--text);
-                height: 55px;
-                font-size: 1.1rem;
-                cursor: pointer;
-                transition: all 0.1s ease;
-            }
-
-            .num-key:active {
-                background: var(--btn-active); /* Dark slate active state */
-                color: var(--bg-primary); /* Inverse text color so it remains visible */
-            }
-
-            .special-key { 
-                font-size: 0.65rem; 
-                color: var(--text-secondary); /* Give special keys a muted look */
+                height: 1rem;
             }
         "#} }
 
-        div { class: "pin-page",
-            div { class: "terminal-frame",
-                div { class: "terminal-header", "DANNESK v0.3.0" }
-
-                div { class: "main-layout",
-                    div { class: "status-panel",
-                        div { class: "terminal-input-wrapper",
-                            if *is_processing.read() {
-                                span { class: "loading-text", "DECRYPTING_HASH..." }
-                            } else {
-                                input {
-                                    class: "pin-field",
-                                    r#type: "password",
-                                    autofocus: true,
-                                    value: "{input}",
-                                    oninput: move |evt| {
-                                        let val = evt.value();
-                                        if val.len() <= 6 && val.chars().all(|c| c.is_numeric()) {
-                                            input.set(val.clone());
-                                            if val.len() == 6 { run_submit(); }
-                                        }
-                                    }
-                                }
+        div { class: "pin-container",
+            div { class: "input-row",
+                span { class: "prompt", "{prompt}" }
+                if *is_processing.read() {
+                    span { class: "pin-input", "..." }
+                } else {
+                    input {
+                        class: "pin-input",
+                        r#type: "password",
+                        autofocus: true,
+                        value: "{input}",
+                        oninput: move |evt| {
+                            let val = evt.value();
+                            if val.len() <= 6 && val.chars().all(|c| c.is_numeric()) {
+                                input.set(val.clone());
+                                if val.len() == 6 { run_submit(); }
                             }
-                        }
-                        div { class: "status-msg", "{error_msg.read().clone().unwrap_or_default()}" }
-                    }
-
-                    div {
-                        class: if *is_processing.read() { "keypad processing" } else { "keypad" },
-                        for n in ["1", "2", "3", "4", "5", "6", "7", "8", "9"] {
-                            button {
-                                class: "num-key",
-                                onclick: move |_| add_digit(n.chars().next().unwrap()),
-                                "{n}"
-                            }
-                        }
-                        button {
-                            class: "num-key special-key",
-                            onclick: move |_| input.set(String::new()),
-                            "CLR"
-                        }
-                        button {
-                            class: "num-key",
-                            onclick: move |_| add_digit('0'),
-                            "0"
-                        }
-                        button {
-                            class: "num-key special-key",
-                            onclick: move |_| { input.with_mut(|s| { s.pop(); }); },
-                            "DEL"
                         }
                     }
                 }
             }
+            div { class: "error", "{error_msg.read().clone().unwrap_or_default()}" }
         }
     }
 }

@@ -2,8 +2,8 @@
 //dependent upon src/utils/wallet_security_layout.rs
 
 use crate::context::{GlobalContext, XrpContext};
-use crate::ui::managexrp::xrpimport::xrpimportlogic::XRPImportLogic;
-use crate::utils::wallet_security_layout::WalletSecurityForm;
+use crate::bridge::xrp_import_logic::XRPImportLogic;
+use crate::ui::components::wallet_security_layout::WalletSecurityForm;
 use dioxus_native::prelude::*;
 use zeroize::Zeroizing;
 

@@ -2,8 +2,8 @@
 //dependent upon src/utils/wallet_security_layout.rs
 
 use crate::context::{BtcContext, GlobalContext};
-use crate::ui::managebtc::btccreate::btccreatelogic::BTCCreateLogic;
-use crate::utils::wallet_security_layout::WalletSecurityForm;
+use crate::bridge::btc_create_logic::BTCCreateLogic;
+use crate::ui::components::wallet_security_layout::WalletSecurityForm;
 use dioxus_native::prelude::*;
 use zeroize::Zeroizing;
 

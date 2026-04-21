@@ -1,6 +1,6 @@
 // src/ui/managebtc/receive.rs
 use crate::context::{BtcContext, GlobalContext};
-use crate::utils::receive_layout::ReceiveAddressLayout;
+use crate::ui::components::receive_layout::ReceiveAddressLayout;
 use dioxus_native::prelude::*;
 use crate::channel::Theme;
 

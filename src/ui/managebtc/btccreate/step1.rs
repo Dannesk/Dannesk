@@ -3,7 +3,7 @@
 
 use crate::channel::BtcWalletProcessState;
 use crate::context::{BtcContext, GlobalContext};
-use crate::utils::create_seed_layout::CreateSeedForm; // The new centralized layout
+use crate::ui::components::create_seed_layout::CreateSeedForm; // The new centralized layout
 use arboard::Clipboard;
 use dioxus_native::prelude::*;
 

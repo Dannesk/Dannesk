@@ -28,6 +28,8 @@ mod wallet;
 mod ws;
 mod enterpin; 
 mod update; 
+mod bridge; 
+mod scaling;
 
 use crate::channel::{WSCommand, Theme};
 use crate::context::GlobalContext;
@@ -38,6 +40,7 @@ use crate::theme::{DARK_CSS, LIGHT_CSS};
 use crate::ws::{run_crypto_websocket, run_exchange_websocket};
 use crate::update::UpdatePrompt;
 use crate::enterpin::PinScreen;
+use crate::scaling::{get_system_scale, SCALE_FACTOR};
 
 static UI_COMMANDS_TX: OnceLock<mpsc::Sender<WSCommand>> = OnceLock::new();
 
@@ -48,8 +51,14 @@ enum AppState {
     UpdatePrompt,
 }
 
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     startup::init_globals();
+
+    // GET AND PRINT SCALE FACTOR
+    let scale = get_system_scale();
+    let _ = SCALE_FACTOR.set(scale);
+    println!("SCALE FACTOR: {}", scale);
 
     println!("Starting main - before init_startup");
 
@@ -60,34 +69,49 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let handle = runtime.handle().clone();
 
-    // Calls the function in startup.rs
     init_startup(&handle);
 
+    let (tx_ex, rx_ex) = mpsc::channel::<()>(1);
+    let _ = crate::ws::EXCHANGE_SHUTDOWN_TX.set(tx_ex);
+
     let (commands_tx, commands_rx) = mpsc::channel::<WSCommand>(100);
-    let (exchange_shutdown_tx, exchange_shutdown_rx) = mpsc::channel::<()>(1);
+    let (ledger_reg_tx, ledger_reg_rx) = mpsc::channel(10);
+    let (outgoing_tx, outgoing_rx) = mpsc::channel(100);
     let (crypto_shutdown_tx, crypto_shutdown_rx) = mpsc::channel::<()>(1);
 
     let _ = UI_COMMANDS_TX.set(commands_tx.clone());
+    let tx_for_wallet = commands_tx.clone();
+
+    let _ = crate::ws::CRYPTO_COMMANDS_TX.set(commands_tx);
+    let _ = crate::ws::LEDGER_REGISTRY_TX.set(ledger_reg_tx);
+    let _ = crate::ws::CRYPTO_OUTGOING_TX.set(outgoing_tx);
+    let _ = crate::ws::CRYPTO_SHUTDOWN_TX.set(crypto_shutdown_tx);
 
     let mut join_handles: Vec<tokio::task::JoinHandle<()>> = vec![];
 
     let exchange_handle = handle.spawn(async move {
-        if let Err(_e) = run_exchange_websocket(exchange_shutdown_rx).await {
+        if let Err(_e) = run_exchange_websocket(rx_ex).await {
             println!("Exchange websocket error: {:?}", _e);
         }
     });
     join_handles.push(exchange_handle);
 
     let crypto_handle = handle.spawn(async move {
-        if let Err(_e) = run_crypto_websocket(commands_rx, crypto_shutdown_rx).await {
-            // Error handling here
+        if let Err(_e) = run_crypto_websocket(
+            commands_rx,
+            ledger_reg_rx,
+            outgoing_rx,
+            crypto_shutdown_rx,
+        )
+        .await
+        {
+            println!("Crypto websocket error: {:?}", _e);
         }
     });
     join_handles.push(crypto_handle);
 
-    let tx_clone = commands_tx.clone();
     let wallet_handle = handle.spawn_blocking(move || {
-        wallet::load_wallets(tx_clone);
+        wallet::load_wallets(tx_for_wallet);
     });
     join_handles.push(wallet_handle);
 
@@ -106,14 +130,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     #[cfg(target_os = "linux")]
     let default_size = LogicalSize::new(1300.0, 800.0);
 
-    #[cfg(target_os = "linux")] //linux needs mut
+    #[cfg(target_os = "linux")]
     let mut window_attr = WindowAttributes::default()
         .with_title("Dannesk")
         .with_surface_size(default_size)
         .with_resizable(true)
         .with_window_icon(window_icon);
 
-    #[cfg(target_os = "windows")] //windows doesn't need mut
+    #[cfg(target_os = "windows")]
     let window_attr = WindowAttributes::default()
         .with_title("Dannesk")
         .with_surface_size(default_size)
@@ -127,26 +151,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         use winit_x11::WindowAttributesX11;
 
         let session_type = std::env::var("XDG_SESSION_TYPE").unwrap_or_default();
-
         let platform_attr: Box<dyn PlatformWindowAttributes> = if session_type == "wayland" {
-            // Wayland
             Box::new(WindowAttributesWayland::default().with_name("dannesk", "dannesk"))
         } else {
-            // X11
             Box::new(WindowAttributesX11::default().with_name("Dannesk", "dannesk"))
         };
-
         window_attr = window_attr.with_platform_attributes(platform_attr);
     }
+
     println!("Launching Dioxus app");
     dioxus_native::launch_cfg(App, vec![], vec![Box::new(window_attr) as Box<dyn Any>]);
     println!("Dioxus app exited");
 
-    // shutdown logic
     handle.block_on(async {
         println!("Sending websocket shutdown signals.");
-        let _ = exchange_shutdown_tx.send(()).await;
-        let _ = crypto_shutdown_tx.send(()).await;
+        if let Some(tx) = crate::ws::EXCHANGE_SHUTDOWN_TX.get() {
+            let _ = tx.send(()).await;
+        }
+        if let Some(tx) = crate::ws::CRYPTO_SHUTDOWN_TX.get() {
+            let _ = tx.send(()).await;
+        }
         for jh in join_handles {
             let _ = jh.await;
         }
@@ -164,22 +188,15 @@ fn App() -> Element {
         .clone();
     context::setup_contexts(tx);
 
-   let global = use_context::<GlobalContext>();
+    let global = use_context::<GlobalContext>();
     let (theme, _hide_balance) = *global.theme_user.read();
     let is_dark = matches!(theme, Theme::Dark);
 
-    // Track if the user has successfully unlocked the PIN
     let mut unlocked = use_signal(|| false);
-
-    // Read the version signal directly. This ensures that if the background
-    // fetch finishes 2 seconds after launch, this component re-renders.
     let remote_version = global.version.read();
 
-    // Determine the current view
     let current_view = match remote_version.as_ref() {
-        // FORCE update if version exists and doesn't match
         Some(v) if v != VERSION => AppState::UpdatePrompt,
-        // Otherwise, check if we are in Dashboard or PinEntry
         _ => {
             if *unlocked.read() {
                 AppState::Dashboard
@@ -191,36 +208,24 @@ fn App() -> Element {
 
     let theme_css = if is_dark { DARK_CSS } else { LIGHT_CSS };
 
-    let zoom = if cfg!(target_os = "windows") {
-        "zoom: 0.80;"
-    } else {
-        ""
-    };
-
     rsx! {
         style { "body {{ margin: 0; padding: 0; }} {theme_css}" }
-        // 1. OUTER WRAPPER: Always 100vh, holds the background colors/classes.
         div {
             class: "theme-root",
             class: if is_dark { "dark" },
             style: "display: flex; flex-direction: column; height: 100vh; width: 100%; overflow: hidden;",
-
-            // 2. INNER CONTENT WRAPPER: This is where the zoom lives.
-            // margin: auto ensures the zoomed content fills the parent available space.
             div {
-                style: "display: flex; flex-direction: column; flex: 1; width: 100%; margin: auto; {zoom}",
-
-
-            match current_view {
-                AppState::UpdatePrompt => rsx! { UpdatePrompt {} },
-                AppState::PinEntry => rsx! {
-                    PinScreen { on_unlock: move |_| unlocked.set(true) }
-                },
-                AppState::Dashboard => rsx! {
-                    ui::dashboard::render_dashboard {}
+                style: "display: flex; flex-direction: column; flex: 1; width: 100%; margin: auto;",
+                match current_view {
+                    AppState::UpdatePrompt => rsx! { UpdatePrompt {} },
+                    AppState::PinEntry => rsx! {
+                        PinScreen { on_unlock: move |_| unlocked.set(true) }
+                    },
+                    AppState::Dashboard => rsx! {
+                        ui::dashboard::render_dashboard {}
+                    }
                 }
             }
-        }
         }
     }
 }

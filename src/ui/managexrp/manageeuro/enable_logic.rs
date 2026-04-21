@@ -1,7 +1,6 @@
 // src/ui/managereuro/enable_logic.rs
 
 use crate::channel::{CHANNEL, ProgressState, SignTransactionState, WSCommand};
-use arboard::Clipboard;
 use tokio::sync::mpsc::Sender;
 use zeroize::Zeroizing;
 
@@ -76,10 +75,7 @@ impl EuroEnableLogic {
         // 5. Dispatch
         match ws_tx.try_send(cmd) {
             Ok(_) => {
-                // Clear clipboard for security
-                if let Ok(mut ctx) = Clipboard::new() {
-                    let _ = ctx.set_text("");
-                }
+          
                 // Reset transaction state
                 let _ = CHANNEL.sign_transaction_tx.send(SignTransactionState {
                     send_transaction: None,

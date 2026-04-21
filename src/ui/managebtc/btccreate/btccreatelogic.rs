@@ -7,7 +7,6 @@ use bitcoin::secp256k1::Secp256k1;
 use bitcoin::{CompressedPublicKey, Network};
 use std::str::FromStr;
 use tokio::sync::mpsc::Sender;
-// Removed: keyring::Entry
 use arboard::Clipboard;
 use serde::Serialize;
 use zeroize::{Zeroize, Zeroizing};

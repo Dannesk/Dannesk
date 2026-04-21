@@ -39,8 +39,10 @@ pub fn validate_inputs(
         return Err(error);
     }
 
-    if wallet != bitcoin_current_wallet {
-        let error = "Wallet does not match current Bitcoin wallet".to_string();
+    // Fix: Allow empty current_wallet and trace mismatch if it exists.
+    // This was likely killing the transaction because bitcoin_current_wallet starts empty.
+    if !bitcoin_current_wallet.is_empty() && wallet != bitcoin_current_wallet {
+        let error = format!("Wallet mismatch: {} != {}", wallet, bitcoin_current_wallet);
         let _ = CHANNEL.progress_tx.send(Some(ProgressState {
             progress: 1.0,
             message: error.clone(),

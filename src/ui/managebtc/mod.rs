@@ -2,6 +2,8 @@
 use crate::channel::{BtcActiveView, BtcImport};
 use crate::context::BtcContext;
 use crate::utils::styles::terminal_action;
+// Import the newly created layout component
+use crate::ui::components::btc_manage_layout::BtcManageLayout;
 use bip39::{Language, Mnemonic};
 use dioxus_native::prelude::*;
 use rand::{Rng, rng};
@@ -36,33 +38,6 @@ pub fn render_manage_btc() -> Element {
     }
 
     // --- TERMINAL ACTIONS ---
-    let create_btn = terminal_action("CREATE_BTC_WALLET", true, move |_| {
-        let mut entropy = [0u8; 32];
-        rng().fill_bytes(&mut entropy);
-        let mnemonic = Mnemonic::from_entropy_in(Language::English, &entropy).unwrap();
-        let seed = Zeroizing::new(mnemonic.to_string());
-
-        btc_wallet_process.with_mut(|state| {
-            state.create_wallet = Some(BtcImport {
-                step: 1,
-                seed: Some(seed),
-                error: None,
-            });
-        });
-        btc_modal.with_mut(|s| s.view_type = BtcActiveView::Create);
-    });
-
-    let import_btn = terminal_action("IMPORT_BTC_WALLET", true, move |_| {
-        btc_wallet_process.with_mut(|state| {
-            state.import_wallet = Some(BtcImport {
-                step: 1,
-                seed: None,
-                error: None,
-            });
-        });
-        btc_modal.with_mut(|s| s.view_type = BtcActiveView::Import);
-    });
-
     let history_btn = terminal_action(
         "HISTORY",
         matches!(view_type, BtcActiveView::Transactions),
@@ -73,65 +48,26 @@ pub fn render_manage_btc() -> Element {
 
     // --- RENDER ---
     rsx! {
-        style { {r#"
-            .terminal-viewport { 
-                display: flex; 
-                flex-direction: row; 
-                width: 100%; 
-                flex: 1;
-                justify-content: center; 
-                padding: 0 2rem; 
-                box-sizing: border-box;
-            }
-            .setup-container {
-                width: 100%;
-                max-width: 600px; 
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-            }
-            .term-main { 
-                flex: 1; 
-                display: flex; 
-                flex-direction: column; 
-                align-items: center; 
-                justify-content: center; 
-            }
-            .term-sidebar-right { 
-                position: absolute;
-                right: 2rem;
-                display: flex; 
-                flex-direction: column; 
-                gap: 1rem; 
-                justify-content: center; 
-                height: 100%;
-                align-items: flex-end;
-            }
-        "#} }
-
-        div { class: "terminal-viewport",
-            // No left sidebar for BTC
-
-            div { class: "term-main",
-                if !has_wallet {
-                    // Applied matching setup container and label
-                    div { class: "setup-container",
-                        div {
-                            style: "display: flex; flex-direction: column; gap: 1rem; width: 100%; align-items: center;",
-                            {create_btn}
-                            {import_btn}
-                        }
-                    }
-                } else {
-                    btcbalance::view {}
-                }
-            }
-
-            if has_wallet {
-                div { class: "term-sidebar-right",
-                    {history_btn}
-                }
-            }
+        BtcManageLayout {
+            has_wallet: has_wallet,
+            history_btn: history_btn,
+            on_create_click: move |_| {
+                let mut entropy = [0u8; 32];
+                rng().fill_bytes(&mut entropy);
+                let mnemonic = Mnemonic::from_entropy_in(Language::English, &entropy).unwrap();
+                let seed = Zeroizing::new(mnemonic.to_string());
+                btc_wallet_process.with_mut(|state| {
+                    state.create_wallet = Some(BtcImport { step: 1, seed: Some(seed), error: None })
+                });
+                btc_modal.with_mut(|s| s.view_type = BtcActiveView::Create);
+            },
+            on_import_click: move |_| {
+                btc_wallet_process.with_mut(|state| {
+                    state.import_wallet = Some(BtcImport { step: 1, seed: None, error: None })
+                });
+                btc_modal.with_mut(|s| s.view_type = BtcActiveView::Import);
+            },
+            active_balance_view: rsx! { btcbalance::view {} },
         }
     }
 }

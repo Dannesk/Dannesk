@@ -1,16 +1,17 @@
 use crate::channel::{CHANNEL, TransactionData, TransactionState, TransactionStatus, WSCommand};
-use crate::ws::connection::ConnectionManager;
+use crate::ws::CRYPTO_OUTGOING_TX;
 use serde_json::{Value, json};
 use tokio_tungstenite::tungstenite::Message;
 
 pub async fn execute(
-    connection: &mut ConnectionManager,
-    _current_wallet: &mut String,
+    _current_wallet: String,
     cmd: WSCommand,
 ) -> Result<(), String> {
     if let Some(wallet) = &cmd.wallet {
         let msg_json = json!({ "command": "get_cached_balance", "wallet": wallet });
-        connection.send(Message::text(msg_json.to_string())).await?;
+        if let Some(tx) = CRYPTO_OUTGOING_TX.get() {
+            let _ = tx.send(Message::text(msg_json.to_string())).await;
+        }
         Ok(())
     } else {
         Err("Missing wallet parameter".to_string())
@@ -55,7 +56,6 @@ pub async fn process_response(message: Message, _current_wallet: &str) -> Result
                 .and_then(|e| e.parse::<f64>().ok())
                 .unwrap_or(0.0);
 
-            // Extract XSGD balance
             let xsgd_balance = data
                 .get("xsgd_balance")
                 .and_then(|e| e.as_str())
@@ -70,8 +70,6 @@ pub async fn process_response(message: Message, _current_wallet: &str) -> Result
                 .get("has_euro")
                 .and_then(|h| h.as_bool())
                 .unwrap_or(false);
-
-            // Extract has_xsgd
             let has_xsgd = data
                 .get("has_xsgd")
                 .and_then(|h| h.as_bool())
@@ -85,8 +83,6 @@ pub async fn process_response(message: Message, _current_wallet: &str) -> Result
                 .get("trustline_euro_limit")
                 .and_then(|l| l.as_str())
                 .and_then(|l| l.parse::<f64>().ok());
-
-            // Extract XSGD trustline limit
             let trustline_xsgd_limit = data
                 .get("trustline_xsgd_limit")
                 .and_then(|l| l.as_str())
@@ -166,26 +162,10 @@ pub async fn process_response(message: Message, _current_wallet: &str) -> Result
             };
 
             let (_, _, private_key_deleted) = *CHANNEL.wallet_balance_rx.borrow();
-            CHANNEL
-                .wallet_balance_tx
-                .send((balance_xrp, Some(wallet.to_string()), private_key_deleted))
-                .map_err(|e| format!("Failed to send wallet balance: {}", e))?;
-
-            CHANNEL
-                .rlusd_tx
-                .send((rlusd_balance, has_rlusd, trustline_limit))
-                .map_err(|e| format!("Failed to send RLUSD balance: {}", e))?;
-
-            CHANNEL
-                .euro_tx
-                .send((euro_balance, has_euro, trustline_euro_limit))
-                .map_err(|e| format!("Failed to send Euro balance: {}", e))?;
-
-            // Send XSGD data to the channel
-            CHANNEL
-                .sgd_tx
-                .send((xsgd_balance, has_xsgd, trustline_xsgd_limit))
-                .map_err(|e| format!("Failed to send XSGD balance: {}", e))?;
+            let _ = CHANNEL.wallet_balance_tx.send((balance_xrp, Some(wallet.to_string()), private_key_deleted));
+            let _ = CHANNEL.rlusd_tx.send((rlusd_balance, has_rlusd, trustline_limit));
+            let _ = CHANNEL.euro_tx.send((euro_balance, has_euro, trustline_euro_limit));
+            let _ = CHANNEL.sgd_tx.send((xsgd_balance, has_xsgd, trustline_xsgd_limit));
 
             if !transactions_data.is_empty() {
                 let mut current_transactions =
@@ -193,12 +173,9 @@ pub async fn process_response(message: Message, _current_wallet: &str) -> Result
                 for tx_data in transactions_data {
                     current_transactions.insert(tx_data.tx_id.clone(), tx_data.clone());
                 }
-                CHANNEL
-                    .transactions_tx
-                    .send(TransactionState {
-                        transactions: current_transactions,
-                    })
-                    .map_err(|e| format!("Failed to send transaction data: {}", e))?;
+                let _ = CHANNEL.transactions_tx.send(TransactionState {
+                    transactions: current_transactions,
+                });
             }
 
             Ok(())

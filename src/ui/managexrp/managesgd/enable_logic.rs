@@ -1,7 +1,6 @@
 // src/ui/managerlusd/enable_logic.rs
 
 use crate::channel::{CHANNEL, ProgressState, SignTransactionState, WSCommand};
-use arboard::Clipboard;
 use tokio::sync::mpsc::Sender;
 use zeroize::Zeroizing;
 
@@ -76,9 +75,7 @@ impl SgdEnableLogic {
         // 5. Dispatch
         match ws_tx.try_send(cmd) {
             Ok(_) => {
-                if let Ok(mut ctx) = Clipboard::new() {
-                    let _ = ctx.set_text("");
-                }
+                
                 let _ = CHANNEL.sign_transaction_tx.send(SignTransactionState {
                     send_transaction: None,
                 });

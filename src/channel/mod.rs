@@ -28,8 +28,8 @@ pub struct Channel {
     pub exchange_ws_status_rx: watch::Receiver<bool>,
     pub crypto_ws_status_tx: watch::Sender<bool>,
     pub crypto_ws_status_rx: watch::Receiver<bool>,
-    pub sidebar_view_tx: watch::Sender<SideBarView>,
-    pub sidebar_view_rx: watch::Receiver<SideBarView>,
+    pub balance_view_tx: watch::Sender<BalanceActiveView>,
+    pub balance_view_rx: watch::Receiver<BalanceActiveView>,
 
     //rlusd / sgd / euro channels
     pub rlusd_tx: watch::Sender<(f64, bool, Option<f64>)>,
@@ -69,14 +69,14 @@ pub struct Channel {
 impl Channel {
     pub fn new() -> Self {
         //global related
-        let (theme_user_tx, theme_user_rx) = watch::channel((Theme::Dark, false)); 
+        let (theme_user_tx, theme_user_rx) = watch::channel((Theme::Dark, false));
         let (rates_tx, rates_rx) = watch::channel(HashMap::new());
         let (selected_tab_tx, selected_tab_rx) = watch::channel(Tab::Balance);
         let (progress_tx, progress_rx) = watch::channel(None);
         let (version_tx, version_rx) = watch::channel(None);
         let (exchange_ws_status_tx, exchange_ws_status_rx) = watch::channel(false);
         let (crypto_ws_status_tx, crypto_ws_status_rx) = watch::channel(false);
-        let (sidebar_view_tx, sidebar_view_rx) = watch::channel(SideBarView::None);
+        let (balance_view_tx, balance_view_rx) = watch::channel(BalanceActiveView::Main);
 
         //token balances
         let (rlusd_tx, rlusd_rx) = watch::channel((0.0, false, None));
@@ -85,23 +85,45 @@ impl Channel {
 
         //xrp related
         let (wallet_balance_tx, wallet_balance_rx) = watch::channel((0.0, None, false));
-        let (xrp_modal_tx, xrp_modal_rx) = watch::channel(XrpModalState::default());
+        let (xrp_modal_tx, xrp_modal_rx) = watch::channel(XrpModalState {
+            view_type: ActiveView::Xrp,
+            last_view: None,
+        });
         let (sign_transaction_tx, sign_transaction_rx) =
-            watch::channel(SignTransactionState::default());
+            watch::channel(SignTransactionState {
+                send_transaction: None,
+            });
         let (xrp_wallet_process_tx, xrp_wallet_process_rx) =
-            watch::channel(XrpWalletProcessState::default());
-        let (transactions_tx, transactions_rx) = watch::channel(TransactionState::default());
-        let (trade_tx, trade_rx) = watch::channel(SignTradeState::default());
+            watch::channel(XrpWalletProcessState {
+                import_wallet: None,
+                create_wallet: None,
+            });
+        let (transactions_tx, transactions_rx) = watch::channel(TransactionState {
+            transactions: HashMap::new(),
+        });
+        let (trade_tx, trade_rx) = watch::channel(SignTradeState {
+            send_trade: None,
+        });
 
         //btc related
         let (bitcoin_wallet_tx, bitcoin_wallet_rx) = watch::channel((0.0, None, false));
-        let (btc_modal_tx, btc_modal_rx) = watch::channel(BtcModalState::default());
+        let (btc_modal_tx, btc_modal_rx) = watch::channel(BtcModalState {
+            view_type: BtcActiveView::Btc,
+            last_view: None,
+        });
         let (btc_transactions_tx, btc_transactions_rx) =
-            watch::channel(BtcTransactionState::default());
+            watch::channel(BtcTransactionState {
+                transactions: HashMap::new(),
+            });
         let (btc_sign_transaction_tx, btc_sign_transaction_rx) =
-            watch::channel(BtcSignTransactionState::default());
+            watch::channel(BtcSignTransactionState {
+                send_transaction: None,
+            });
         let (btc_wallet_process_tx, btc_wallet_process_rx) =
-            watch::channel(BtcWalletProcessState::default());
+            watch::channel(BtcWalletProcessState {
+                import_wallet: None,
+                create_wallet: None,
+            });
 
         Channel {
             theme_user_tx,
@@ -118,8 +140,9 @@ impl Channel {
             exchange_ws_status_rx,
             crypto_ws_status_tx,
             crypto_ws_status_rx,
-            sidebar_view_tx,
-            sidebar_view_rx,
+            balance_view_tx,
+            balance_view_rx,
+
 
             rlusd_tx,
             rlusd_rx,

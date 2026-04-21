@@ -1,6 +1,6 @@
 use crate::context::{GlobalContext, XrpContext};
-use crate::ui::managexrp::trade::tradelogic::TradeLogic;
-use crate::utils::send_auth_layout::SendAuthForm;
+use crate::bridge::trade_logic::TradeLogic;
+use crate::ui::components::send_auth_layout::SendAuthForm;
 use dioxus_native::prelude::*;
 
 #[component]

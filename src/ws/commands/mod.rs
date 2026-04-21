@@ -1,5 +1,4 @@
 use crate::channel::WSCommand;
-use crate::ws::connection::ConnectionManager;
 use tokio_tungstenite::tungstenite::Message;
 
 pub mod balances;
@@ -86,61 +85,58 @@ impl Command {
 
     pub async fn execute(
         &self,
-        connection: &mut ConnectionManager,
-        current_wallet: &mut String,
-        bitcoin_current_wallet: &mut String,
+        current_wallet: String,
+        bitcoin_current_wallet: String,
         cmd: WSCommand,
     ) -> Result<(), String> {
         match self {
-            Command::ImportWallet => import_wallet::execute(connection, current_wallet, cmd).await,
-            Command::DeleteWallet => delete_wallet::execute(connection, current_wallet, cmd).await,
+            Command::ImportWallet => import_wallet::execute(current_wallet, cmd).await,
+            Command::DeleteWallet => delete_wallet::execute(current_wallet, cmd).await,
             Command::SubmitTransaction => {
-                submit_transaction::execute(connection, current_wallet, cmd).await
+                submit_transaction::execute(current_wallet, cmd).await
             }
             Command::GetLedgerData => {
-                ledger::fetch_ledger_data(connection, cmd.wallet.as_ref().ok_or("Missing wallet")?)
+                ledger::fetch_ledger_data(cmd.wallet.as_ref().ok_or("Missing wallet")?)
                     .await
                     .map(|_| ())
             }
-            Command::GetBalance => getcachedbalance::execute(connection, current_wallet, cmd).await,
+            Command::GetBalance => getcachedbalance::execute(current_wallet, cmd).await,
             Command::GetTrustlineLimit
             | Command::GetTrustlineEuroLimit
             | Command::GetTrustlineSGDLimit => {
-                trustline::execute(connection, current_wallet, cmd).await
+                trustline::execute(current_wallet, cmd).await
             }
             Command::GetTransaction => {
-                get_transaction::execute(connection, current_wallet, cmd).await
+                get_transaction::execute(current_wallet, cmd).await
             }
 
-            // All XRPL Balance types route to balances::execute
             Command::GetRLUSDBalance
             | Command::GetXSGDBalance
             | Command::GetEUROBalance
-            | Command::GetXRPBalance => balances::execute(connection, current_wallet, cmd).await,
+            | Command::GetXRPBalance => balances::execute(current_wallet, cmd).await,
 
             Command::ImportBitcoinWallet => {
-                bitcoin_import_wallet::execute(connection, bitcoin_current_wallet, cmd).await
+                bitcoin_import_wallet::execute(bitcoin_current_wallet, cmd).await
             }
             Command::GetBitcoinBalance => {
-                getbitcoincachedbalance::execute(connection, bitcoin_current_wallet, cmd).await
+                getbitcoincachedbalance::execute(bitcoin_current_wallet, cmd).await
             }
             Command::DeleteBitcoinWallet => {
-                bitcoin_delete_wallet::execute(connection, bitcoin_current_wallet, cmd).await
+                bitcoin_delete_wallet::execute(bitcoin_current_wallet, cmd).await
             }
             Command::SubmitBitcoinTransaction => {
-                bitcoin_submit_transaction::execute(connection, bitcoin_current_wallet, cmd).await
+                bitcoin_submit_transaction::execute(bitcoin_current_wallet, cmd).await
             }
             Command::GetBitcoinLedgerData => bitcoin_ledger::fetch_utxo_data(
-                connection,
                 cmd.wallet.as_ref().ok_or("Missing wallet")?,
             )
             .await
             .map(|_| ()),
             Command::GetBTCBalance => {
-                get_bitcoin_balance::execute(connection, bitcoin_current_wallet, cmd).await
+                get_bitcoin_balance::execute(bitcoin_current_wallet, cmd).await
             }
             Command::GetBitcoinTransaction => {
-                get_btc_transaction::execute(connection, bitcoin_current_wallet, cmd).await
+                get_btc_transaction::execute(bitcoin_current_wallet, cmd).await
             }
         }
     }
@@ -172,7 +168,6 @@ impl Command {
                 get_transaction::process_response(message, current_wallet).await
             }
 
-            // All XRPL Balance types route to balances::process_response
             Command::GetRLUSDBalance
             | Command::GetXSGDBalance
             | Command::GetEUROBalance

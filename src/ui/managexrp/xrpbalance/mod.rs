@@ -13,7 +13,7 @@ pub mod wallet_operations;
 
 #[component]
 pub fn render_xrp_balance() -> Element {
-    let global = use_context::<GlobalContext>(); // <--- Added this back
+    let global = use_context::<GlobalContext>(); 
     let xrp_ctx = use_context::<XrpContext>();
 
     let mut sign_tx = xrp_ctx.sign_transaction;

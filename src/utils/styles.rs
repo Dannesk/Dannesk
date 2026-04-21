@@ -57,7 +57,7 @@ pub fn terminal_action(
 
     rsx! {
         button {
-            style: "background: transparent; border: none; cursor: pointer; padding: 8px; display: flex; align-items: center;",
+            style: "background: transparent; border: none; cursor: pointer; white-space: nowrap; padding: 8px; display: flex; align-items: center;",
             onclick: on_click,
 
             span {
@@ -71,6 +71,7 @@ pub fn terminal_action(
         }
     }
 }
+
 
 /// Identical to terminal_action but with green text (var(--status-ok)) when active
 pub fn nav_action(
@@ -107,27 +108,3 @@ pub fn nav_action(
     }
 }
 
-
-pub fn sidebar_action(
-    label: &str,
-    active: bool,
-    on_click: impl FnMut(MouseEvent) + 'static,
-) -> Element {
-    let label_color = if active {
-        "var(--accent)"
-    } else {
-        "var(--text)"
-    };
-
-    rsx! {
-        button {
-            style: "background: transparent; border: none; cursor: pointer; padding: 10px 18px; width: 100%; text-align: left; display: flex; align-items: center;",
-            onclick: on_click,
-
-            span {
-                style: "font-family: 'JetBrains Mono', monospace; font-size: 0.83rem; letter-spacing: 1.1px; color: {label_color};",
-                "{label}"
-            }
-        }
-    }
-}

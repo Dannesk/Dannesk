@@ -1,23 +1,21 @@
-// Updated submit_transaction.rs (only the relevant part)
+// ws/commands/bitcoin_submit_transaction.rs
 use crate::channel::{CHANNEL, ProgressState, WSCommand};
 use crate::ws::commands::{
     bitcoin_auth, bitcoin_payment, bitcoin_transaction_sender, bitcoin_validation,
 };
-use crate::ws::connection::ConnectionManager;
 use serde_json::Value;
 use tokio_tungstenite::tungstenite::Message;
 
 pub async fn execute(
-    connection: &mut ConnectionManager,
-    bitcoin_current_wallet: &mut str,
+    bitcoin_current_wallet: String,
     cmd: WSCommand,
 ) -> Result<(), String> {
     // Validate inputs
     let (tx_type, wallet, _passphrase) =
-        bitcoin_validation::validate_inputs(&cmd, bitcoin_current_wallet)?;
+        bitcoin_validation::validate_inputs(&cmd, &bitcoin_current_wallet)?;
 
-    // Fetch UTXO data
-    let utxos = crate::ws::commands::bitcoin_ledger::fetch_utxo_data(connection, &wallet)
+    // Fetch UTXO data - now uses the oneshot system internally
+    let utxos = crate::ws::commands::bitcoin_ledger::fetch_utxo_data(&wallet)
         .await
         .map_err(|_| {
             let err = "Error: Unable to get UTXO. Transaction Failed.".to_string();
@@ -27,12 +25,6 @@ pub async fn execute(
             }));
             err
         })?;
-
-    // Send progress update: constructing transaction
-    let _ = CHANNEL.progress_tx.send(Some(ProgressState {
-        progress: 0.4,
-        message: "constructing transaction".to_string(),
-    }));
 
     // Get fee from cmd.fee
     let fee = cmd
@@ -56,25 +48,36 @@ pub async fn execute(
         err
     })?;
 
-    // Authenticate wallet (now passing bip39)
-    let wallet_obj = bitcoin_auth::authenticate_wallet(
-        cmd.passphrase.clone(),
-        cmd.seed.clone(),
-        cmd.bip39.clone(), // Pass the optional BIP39
-        &wallet,
-    )?;
+    // Authenticate wallet - Moved to spawn_blocking to avoid blocking the crypto loop
+    let cmd_clone = cmd.clone();
+    let wallet_clone = wallet.clone();
+    let wallet_obj = tokio::task::spawn_blocking(move || {
+        bitcoin_auth::authenticate_wallet(
+            cmd_clone.passphrase,
+            cmd_clone.seed,
+            cmd_clone.bip39,
+            &wallet_clone,
+        )
+    })
+    .await
+    .map_err(|e| format!("Internal thread error: {}", e))??;
+
+    // Send progress update: constructing transaction
+    let _ = CHANNEL.progress_tx.send(Some(ProgressState {
+        progress: 0.6,
+        message: "constructing transaction".to_string(),
+    }));
 
     // Construct transaction
     let tx_hex =
         bitcoin_payment::construct_transaction(&wallet_obj, &cmd, &tx_type, utxos, fee).await?;
 
-    // Send transaction
-    bitcoin_transaction_sender::send_transaction(connection, &wallet, &tx_type, tx_hex).await?;
+    // Send transaction - now uses the updated sender that uses CRYPTO_OUTGOING_TX
+    bitcoin_transaction_sender::send_transaction(&wallet, &tx_type, tx_hex).await?;
 
     Ok(())
 }
 
-// The process_response function remains unchanged
 pub async fn process_response(
     message: Message,
     _bitcoin_current_wallet: &str,

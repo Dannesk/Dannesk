@@ -4,7 +4,7 @@
 use crate::context::{EuroContext, GlobalContext, XrpContext};
 use crate::utils::add_commas;
 use crate::utils::styles::terminal_action;
-use crate::utils::token_layout::TokenLayout;
+use crate::ui::components::token_layout::TokenLayout;
 use dioxus_native::prelude::*; // Centralized layout
 
 pub fn render_euro_balance() -> Element {

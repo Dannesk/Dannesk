@@ -2,7 +2,7 @@
 //dependent upon utils/send_recipient_layout.rs
 
 use crate::context::XrpContext;
-use crate::utils::send_recipient_layout::SendAddressForm;
+use crate::ui::components::send_recipient_layout::SendAddressForm;
 use dioxus_native::prelude::*;
 
 #[component]

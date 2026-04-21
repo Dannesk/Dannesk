@@ -2,8 +2,8 @@
 //dependent upon utils/auth_layout.rs
 
 use crate::context::{BtcContext, GlobalContext};
-use crate::ui::managebtc::btcsend::sendlogic::{BtcSendLogic, BtcSendParams};
-use crate::utils::send_auth_layout::SendAuthForm;
+use crate::bridge::btc_send_logic::{BtcSendLogic, BtcSendParams};
+use crate::ui::components::send_auth_layout::SendAuthForm;
 use dioxus_native::prelude::*;
 
 #[component]

@@ -1,9 +1,10 @@
-use crate::channel::{SideBarView, Tab, Theme};  // ← added Theme
+// src/ui/dashboard.rs
+use crate::channel::{Tab, Theme};
 use crate::context::GlobalContext;
 use crate::ui::{
-    balance, changepin, managebtc, managexrp, networkstatus, progressbar::ProgressBar, sidebar,
-    ticker,
+    balance, managebtc, managexrp, progressbar::ProgressBar,
 };
+// Removed Sidebar imports entirely
 use dioxus_native::prelude::*;
 
 pub fn render_dashboard() -> Element {
@@ -11,37 +12,21 @@ pub fn render_dashboard() -> Element {
         div {
             class: "theme-root",
             style: "display: flex; flex-direction: column; height: 100%; width: 100%; overflow: hidden; position: relative;",
-
-            div {
-                style: "position: absolute; top: 0.5rem; right: 1rem; display: flex; gap: 0.5rem; z-index: 1000;",
-                sidebar::render_balance_toggle {}
-                sidebar::render_pin_button {}
-                sidebar::render_rates_button {}
-                sidebar::render_network_button {}
-                sidebar::render_theme_toggle {}
-            }
-
             MainViewSlot {}
             BottomDock {}
         }
     }
 }
 
-// MainViewSlot and TabContentSlot unchanged
 #[component]
 fn MainViewSlot() -> Element {
     let global = use_context::<GlobalContext>();
     let progress = global.progress.read();
-    let sidebar_view = global.sidebar_view.read();
 
     match &*progress {
         Some(_) => rsx! { ProgressBar { operation_name: "Processing...".to_string() } },
-        None => match *sidebar_view {
-            SideBarView::ChangePin => rsx! { changepin::view {} },
-            SideBarView::ExchangeRates => rsx! { ticker::view {} },
-            SideBarView::NetworkStatus => rsx! { networkstatus::view {} },
-            SideBarView::None => rsx! { TabContentSlot {} },
-        },
+        // Directly render TabContentSlot. Sub-view routing (Settings/Pin) is now handled inside balance::render_balance
+        None => rsx! { TabContentSlot {} },
     }
 }
 
@@ -66,22 +51,25 @@ fn TabContentSlot() -> Element {
 #[component]
 fn BottomDock() -> Element {
     let global = use_context::<GlobalContext>();
-    let sidebar_view = global.sidebar_view.read();
     let current_tab = *global.selected_tab.read();
+    
+    // NEW: Also check if progress is happening
+    let progress = global.progress.read();
 
-    // ← NEW: proper destructuring (same pattern as sidebar.rs)
     let (theme, _) = *global.theme_user.read();
     let is_dark = matches!(theme, Theme::Dark);
 
     let dock_bg = if is_dark { "#000000" } else { "#f8fafc" };
 
-    if *sidebar_view != SideBarView::None {
+    // HIDE if a sidebar is open OR if progress is active
+    if progress.is_some() {
         return rsx! {};
     }
 
     rsx! {
         div {
-            style: "display: flex; width: 100%; height: 60px; background-color: {dock_bg};",
+            // Added z-index: 1 to ensure it stays below fixed overlays if they overlap
+            style: "display: flex; width: 100%; height: 60px; background-color: {dock_bg}; z-index: 1;",
             DockButton {
                 label: "BALANCE".to_string(),
                 is_active: current_tab == Tab::Balance,
@@ -103,7 +91,6 @@ fn BottomDock() -> Element {
         }
     }
 }
-
 #[component]
 fn DockButton(
     label: String,

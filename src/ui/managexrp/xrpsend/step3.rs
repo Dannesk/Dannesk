@@ -2,7 +2,7 @@
 // dependent on utils/send_review_layout.rs
 
 use crate::context::{GlobalContext, XrpContext};
-use crate::utils::send_review_layout::render_send_review;
+use crate::ui::components::send_review_layout::render_send_review;
 use dioxus_native::prelude::*;
 
 #[component]

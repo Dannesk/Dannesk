@@ -3,7 +3,7 @@
 
 use crate::channel::XrpWalletProcessState;
 use crate::context::{GlobalContext, XrpContext};
-use crate::utils::create_seed_layout::CreateSeedForm; // Import the new layout
+use crate::ui::components::create_seed_layout::CreateSeedForm; // Import the new layout
 use arboard::Clipboard;
 use dioxus_native::prelude::*;
 

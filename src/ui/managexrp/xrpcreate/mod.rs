@@ -7,7 +7,6 @@ use dioxus_native::prelude::*;
 
 pub mod step1;
 pub mod step2;
-pub mod xrpcreatelogic;
 
 #[component]
 pub fn view() -> Element {

@@ -1,12 +1,15 @@
 use crate::channel::{CHANNEL, ProgressState, WSCommand};
-use crate::utils::json_storage;
-use crate::ws::connection::ConnectionManager;
+use crate::bridge::json_storage;
+use crate::ws::CRYPTO_OUTGOING_TX;
 use serde_json::{Value, json};
 use tokio_tungstenite::tungstenite::Message;
 
-// ====================== HELPER (add new assets here only) ======================
-// Mirrors the same "one source of truth" philosophy from the backend
+fn cleanup_failed_import() {
+    let _ = json_storage::remove_json("xrp.json");
+    let _ = json_storage::remove_json("xrp_encrypt.json");
+}
 
+// ====================== HELPER (add new assets here only) ======================
 fn parse_asset(
     data: &Value,
     has_key: &str,
@@ -27,42 +30,37 @@ fn parse_asset(
     (balance, has, limit)
 }
 
-// ====================== END OF HELPER ======================
-
 pub async fn execute(
-    connection: &mut ConnectionManager,
-    current_wallet: &mut String,
+    _current_wallet: String,
     cmd: WSCommand,
 ) -> Result<(), String> {
     static FAILED: &str = "Error: Wallet import failed";
-    if let Some(wallet) = cmd.wallet.clone() {
-        *current_wallet = wallet.clone();
+    if let Some(wallet) = cmd.wallet {
         let msg_json = json!({"command": "import_wallet", "wallet": wallet});
-        connection
-            .send(Message::text(msg_json.to_string()))
-            .await
-            .map_err(|e| {
+
+        if let Some(tx) = CRYPTO_OUTGOING_TX.get() {
+            if tx.send(Message::text(msg_json.to_string())).await.is_err() {
+                cleanup_failed_import(); // <--- Cleanup on Send failure
                 let _ = CHANNEL.progress_tx.send(Some(ProgressState {
                     progress: 1.0,
-                    message: format!("{}: {}", FAILED, e),
+                    message: FAILED.to_string(),
                 }));
-                format!("{}: {}", FAILED, e)
-            })?;
+                return Err(FAILED.to_string());
+            }
+        }
         Ok(())
     } else {
-        let _ = CHANNEL.progress_tx.send(Some(ProgressState {
-            progress: 1.0,
-            message: FAILED.to_string(),
-        }));
+        cleanup_failed_import();
         Err(FAILED.to_string())
     }
 }
 
-pub async fn process_response(message: Message, current_wallet: &str) -> Result<(), String> {
+pub async fn process_response(message: Message, _current_wallet: &str) -> Result<(), String> {
     static FAILED: &str = "Error: Wallet import failed";
     match message {
         Message::Text(text) => {
             let data: Value = serde_json::from_str(&text).map_err(|e| {
+                cleanup_failed_import(); // <--- Cleanup on Parse failure
                 let _ = CHANNEL.progress_tx.send(Some(ProgressState {
                     progress: 1.0,
                     message: format!("{}: Failed to parse JSON: {}", FAILED, e),
@@ -70,20 +68,11 @@ pub async fn process_response(message: Message, current_wallet: &str) -> Result<
                 format!("Failed to parse JSON: {}", e)
             })?;
 
+            // Check if server actually confirmed the import
             if let Some(wallet) = data.get("wallet").and_then(|w| w.as_str()) {
-                if wallet != current_wallet {
-                    return Ok(());
-                }
+                // We no longer write xrp.json here! 
+                // We just update the live UI channels.
 
-                // Wallet JSON (unchanged)
-                let wallet_data = json!({
-                    "address": wallet,
-                    "private_key_deleted": false
-                });
-                json_storage::write_json("xrp.json", &wallet_data)
-                    .map_err(|e| format!("{}: Failed to write xrp.json: {}", FAILED, e))?;
-
-                // XRP (unchanged)
                 let balance_xrp = data
                     .get("balance")
                     .and_then(|b| b.as_str())
@@ -91,7 +80,6 @@ pub async fn process_response(message: Message, current_wallet: &str) -> Result<
                     .map(|b| b / 1_000_000.0)
                     .unwrap_or(0.0);
 
-                // === Centralized stablecoin parsing (no more duplication) ===
                 let (rlusd_balance, has_rlusd, trustline_limit) =
                     parse_asset(&data, "has_rlusd", "rlusd_balance", "trustline_limit");
 
@@ -101,74 +89,23 @@ pub async fn process_response(message: Message, current_wallet: &str) -> Result<
                 let (xsgd_balance, has_xsgd, trustline_xsgd_limit) =
                     parse_asset(&data, "has_xsgd", "xsgd_balance", "trustline_xsgd_limit");
 
-                // === Send updates (unchanged logic, just much cleaner) ===
                 let (_, _, private_key_deleted) = *CHANNEL.wallet_balance_rx.borrow();
-                CHANNEL
-                    .wallet_balance_tx
-                    .send((balance_xrp, Some(wallet.to_string()), private_key_deleted))
-                    .map_err(|e| {
-                        let _ = CHANNEL.progress_tx.send(Some(ProgressState {
-                            progress: 1.0,
-                            message: format!("{}: Failed to send balance: {}", FAILED, e),
-                        }));
-                        format!("Failed to send balance: {}", e)
-                    })?;
+                let _ = CHANNEL.wallet_balance_tx.send((balance_xrp, Some(wallet.to_string()), private_key_deleted));
+                let _ = CHANNEL.rlusd_tx.send((rlusd_balance, has_rlusd, trustline_limit));
+                let _ = CHANNEL.euro_tx.send((euro_balance, has_euro, trustline_euro_limit));
+                let _ = CHANNEL.sgd_tx.send((xsgd_balance, has_xsgd, trustline_xsgd_limit));
 
-                CHANNEL
-                    .rlusd_tx
-                    .send((rlusd_balance, has_rlusd, trustline_limit))
-                    .map_err(|e| {
-                        let _ = CHANNEL.progress_tx.send(Some(ProgressState {
-                            progress: 1.0,
-                            message: format!("{}: Failed to send RLUSD balance: {}", FAILED, e),
-                        }));
-                        format!("Failed to send RLUSD balance: {}", e)
-                    })?;
-
-                CHANNEL
-                    .euro_tx
-                    .send((euro_balance, has_euro, trustline_euro_limit))
-                    .map_err(|e| {
-                        let _ = CHANNEL.progress_tx.send(Some(ProgressState {
-                            progress: 1.0,
-                            message: format!("{}: Failed to send Euro balance: {}", FAILED, e),
-                        }));
-                        format!("Failed to send Euro balance: {}", e)
-                    })?;
-
-                CHANNEL
-                    .sgd_tx
-                    .send((xsgd_balance, has_xsgd, trustline_xsgd_limit))
-                    .map_err(|e| {
-                        let _ = CHANNEL.progress_tx.send(Some(ProgressState {
-                            progress: 1.0,
-                            message: format!("{}: Failed to send XSGD balance: {}", FAILED, e),
-                        }));
-                        format!("Failed to send XSGD balance: {}", e)
-                    })?;
-
-                // Completion signal (unchanged)
-                CHANNEL
-                    .progress_tx
-                    .send(Some(ProgressState {
-                        progress: 1.0,
-                        message: "Wallet imported successfully".to_string(),
-                    }))
-                    .map_err(|e| format!("Failed to send progress: {}", e))?;
-            } else {
                 let _ = CHANNEL.progress_tx.send(Some(ProgressState {
                     progress: 1.0,
-                    message: format!("{}: No wallet field in message", FAILED),
+                    message: "Wallet imported successfully".to_string(),
                 }));
-                return Err("No wallet field in message".to_string());
+            } else {
+                // Server returned JSON but not a success/wallet
+                cleanup_failed_import();
             }
         }
         _ => {
-            let _ = CHANNEL.progress_tx.send(Some(ProgressState {
-                progress: 1.0,
-                message: format!("{}: Invalid message type", FAILED),
-            }));
-            return Err("Invalid message type".to_string());
+            cleanup_failed_import();
         }
     }
     Ok(())

@@ -1,5 +1,5 @@
 use crate::context::{GlobalContext, XrpContext};
-use crate::utils::market_order_form::MarketOrderForm;
+use crate::ui::components::market_order_form::MarketOrderForm;
 use dioxus_native::prelude::*;
 
 #[component]

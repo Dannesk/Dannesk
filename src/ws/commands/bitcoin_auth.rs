@@ -2,7 +2,7 @@
 
 use crate::channel::{CHANNEL, ProgressState};
 use crate::decrypt::decrypt_data;
-use crate::utils::json_storage::read_json; // Use your utility
+use crate::bridge::json_storage::read_json; // Fixed import path
 use bip39::Mnemonic;
 use bitcoin::CompressedPublicKey;
 use bitcoin::address::Address;
@@ -36,7 +36,7 @@ pub fn authenticate_wallet(
     wallet_address: &str,
 ) -> Result<BitcoinWallet, String> {
     let _ = CHANNEL.progress_tx.send(Some(ProgressState {
-        progress: 0.3,
+        progress: 0.4,
         message: "Authenticating wallet".to_string(),
     }));
 

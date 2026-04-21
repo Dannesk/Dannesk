@@ -1,170 +1,116 @@
-// src/ui/progressbar.rs
 use crate::channel::{CHANNEL, ProgressState};
 use crate::context::GlobalContext;
 use dioxus_native::prelude::*;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 #[component]
 pub fn ProgressBar(operation_name: String) -> Element {
     let global = use_context::<GlobalContext>();
-    let progress_state = global.progress;
+    let state_signal = global.progress;
 
-    let Some(ref state) = *progress_state.read() else {
-        return rsx! {};
-    };
+    // 1. ANIMATION & LERP STATE
+    let mut render_progress = use_signal(|| 0.0f32);
+    let mut frame_count = use_signal(|| 0u64);
+    let mut flicker_alpha = use_signal(|| 1.0f32);
 
-    let mut pulse_opacity = use_signal(|| 1.0f32);
+    // 2. THE UNIFIED FRAME DRIVE (60FPS)
+    use_future(move || async move {
+        let mut interval = tokio::time::interval(Duration::from_millis(16));
+        let mut finished_at: Option<std::time::Instant> = None;
 
-    // Coroutine for terminal-style pulse (breathing opacity)
-    use_coroutine(move |_: UnboundedReceiver<()>| async move {
-        let start = Instant::now();
         loop {
-            let elapsed = start.elapsed().as_secs_f32();
-            // Faster, sharper pulse for a "system" feel
-            let anim_value = (elapsed * 2.0).sin();
-            pulse_opacity.set(0.6 + 0.4 * anim_value);
-            tokio::time::sleep(Duration::from_millis(16)).await;
-        }
-    });
+            interval.tick().await;
 
-    // Timeout and Dismiss logic (Kept from your original logic)
-    use_coroutine(move |_: UnboundedReceiver<()>| async move {
-        let mut ts = Instant::now();
-        loop {
-            tokio::time::sleep(Duration::from_millis(500)).await;
-            let current = (*progress_state.read()).clone();
-            let Some(ref current_state) = current else {
-                break;
-            };
+            let current_state = state_signal.read().clone();
+            let target = current_state.as_ref().map(|s| s.progress).unwrap_or(0.0);
 
-            let is_in_flight = current_state.progress < 1.0
-                && !current_state.message.to_lowercase().contains("error")
-                && !current_state.message.to_lowercase().contains("failed");
+            render_progress.with_mut(|v| {
+                let diff = target - *v;
+                if diff.abs() > 0.001 { *v += diff * 0.1; } 
+                else { *v = target; }
+            });
 
-            if is_in_flight {
-                if ts.elapsed().as_secs() >= 15 {
-                    let _ = CHANNEL.progress_tx.send(Some(ProgressState {
-                        progress: 1.0,
-                        message: "ERR_TIMEOUT // PLEASE_RETRY".to_string(),
-                    }));
-                    ts = Instant::now();
+            frame_count.with_mut(|f| *f += 1);
+            let pulse = ((frame_count() as f32 * 0.2).sin() * 0.1) + 0.9;
+            flicker_alpha.set(pulse);
+
+            if let Some(ref s) = current_state {
+                let is_done = s.progress >= 1.0 
+                    || s.message.to_lowercase().contains("error") 
+                    || s.message.to_lowercase().contains("failed");
+
+                if is_done {
+                    if finished_at.is_none() { finished_at = Some(std::time::Instant::now()); }
+                    if finished_at.unwrap().elapsed() >= Duration::from_millis(300) {
+                        let _ = CHANNEL.progress_tx.send(None);
+                        break; 
+                    }
                 }
-            } else {
-                ts = Instant::now();
-            }
-
-            if current_state.progress >= 1.0
-                || current_state.message.to_lowercase().contains("error")
-                || current_state.message.to_lowercase().contains("failed")
-            {
-                tokio::time::sleep(Duration::from_millis(1200)).await;
-                let _ = CHANNEL.progress_tx.send(None);
-                break;
             }
         }
     });
 
-    let progress = state.progress.clamp(0.0, 1.0);
-    let progress_width = (progress * 100.0).round();
+    // 3. TIMEOUT HANDLER
+    use_future(move || async move {
+        tokio::time::sleep(Duration::from_secs(15)).await;
+        let s = state_signal.read();
+        if let Some(ref state) = *s {
+            if state.progress < 1.0 {
+                let _ = CHANNEL.progress_tx.send(Some(ProgressState {
+                    progress: 1.0,
+                    message: "SYSTEM_TIMEOUT // PLEASE_RETRY".to_string(),
+                }));
+            }
+        }
+    });
 
-    // Terminal styling mapping
-    let status_color = if state.message.to_lowercase().contains("error")
-        || state.message.to_lowercase().contains("failed")
-    {
-        "var(--status-warn)"
-    } else if progress >= 1.0 {
-        "var(--status-ok)"
-    } else {
-        "var(--accent)"
-    };
+    // --- PRE-COMPUTE UI DATA ---
+    let state_lock = state_signal.read();
+    let Some(ref state) = *state_lock else { return rsx! {} };
 
-    let op_name_upper = operation_name.to_uppercase();
-    let msg_upper = state.message.to_uppercase();
+    // Hex replacements from DARK_CSS
+    let status_color = if state.message.to_lowercase().contains("error") { "#ef4444" } else { "#ffffff" };
+    let chars = ["|", "/", "-", "\\"];
+    let spinner_char = chars[(frame_count() / 8 % 4) as usize];
+    let display_percent = (render_progress() * 100.0) as i32;
+    let scanline_top = (frame_count() % 100) as f32;
+
+    let mut segments = Vec::with_capacity(24);
+    for i in 0..24 {
+        let color = if (i as f32 / 24.0) < render_progress() { status_color } else { "transparent" };
+        segments.push(color);
+    }
 
     rsx! {
-        style { {r#"
-            .terminal-overlay {
-                position: fixed;
-                top: 0; left: 0;
-                height: 100%; width: 100%;
-                background-color: rgba(0, 0, 0, 0.9);
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                z-index: 9999;
-                font-family: 'JetBrains Mono', monospace;
-            }
-            .terminal-box {
-                width: 450px;
-                padding: 24px;
-                background: var(--bg-secondary);
-                border: 1px solid var(--border);
-                position: relative;
-                box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            }
-            .terminal-header {
-                display: flex;
-                justify-content: space-between;
-                margin-bottom: 12px;
-                font-size: 0.7rem;
-                letter-spacing: 1px;
-            }
-            .progress-container {
-                width: 100%;
-                height: 12px;
-                background: var(--bg-faint);
-                border: 1px solid var(--border);
-                padding: 2px;
-                margin-bottom: 12px;
-            }
-            .progress-fill {
-                height: 100%;
-                background: var(--accent);
-                transition: width 0.2s ease-out;
-            }
-            .status-line {
-                font-size: 0.65rem;
-                color: var(--text-secondary);
-                display: flex;
-                gap: 8px;
-            }
-            .scanline {
-                width: 100%;
-                height: 1px;
-                background: var(--accent);
-                opacity: 0.1;
-                margin-top: 10px;
-            }
-        "#} }
-
-        div { class: "terminal-overlay",
-            div { class: "terminal-box",
-                // Top info row
-                div { class: "terminal-header",
-                    span { style: "color: var(--text-secondary);", "PROCESS // {op_name_upper}" }
-                    span { style: "color: {status_color}; font-weight: bold;", "{progress_width}%" }
+        div { 
+            class: "terminal-overlay",
+            style: "opacity: {flicker_alpha}; position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; background: rgba(0,0,0,0.85);",
+            
+            div { 
+                class: "terminal-box",
+                style: "width: 400px; padding: 24px; background: #0a0a0a; border: 1px solid #262626; position: relative; font-family: monospace;",
+                
+                div { 
+                    style: "display: flex; justify-content: space-between; color: {status_color}; margin-bottom: 8px;",
+                    span { "PROCESS // {operation_name.to_uppercase()}" }
+                    span { "[{spinner_char}] {display_percent}%" }
                 }
 
-                // Main Progress Bar
-                div { class: "progress-container",
-                    div {
-                        class: "progress-fill",
-                        style: "
-                            width: {progress_width}%; 
-                            background-color: {status_color};
-                            opacity: {pulse_opacity};
-                        "
+                div { 
+                    style: "display: flex; height: 20px; width: 100%; background: #000; border: 1px solid #222; padding: 2px;",
+                    for color in segments {
+                        div { style: "flex: 1; margin: 1px; background-color: {color};" }
                     }
                 }
 
-                // Subtext / Message
-                div { class: "status-line",
-                    span { style: "color: {status_color}", ">" }
-                    span { "{msg_upper}" }
+                div { 
+                    style: "margin-top: 12px; font-size: 11px; color: {status_color};",
+                    "> {state.message.to_uppercase()}"
                 }
-
-                // Aesthetic "System Decor"
-                div { class: "scanline" }
+                
+                div {
+                    style: "position: absolute; left: 0; width: 100%; height: 2px; background: {status_color}; opacity: 0.1; pointer-events: none; top: {scanline_top}%;"
+                }
             }
         }
     }

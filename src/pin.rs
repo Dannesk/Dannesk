@@ -1,12 +1,11 @@
-use crate::utils::json_storage;
-use argon2::{Algorithm, Argon2, Params, Version};
+use crate::bridge::json_storage;
+use sha2::{Sha256, Digest};
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD as BASE64;
 use rand::RngExt;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 use std::fmt;
-use zeroize::Zeroize;
 
 #[derive(Debug)]
 pub enum PinError {
@@ -31,7 +30,7 @@ impl Error for PinError {}
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct PinData {
-    pub pin_hash: String, // Base64-encoded Argon2 hash
+    pub pin_hash: String, // Base64-encoded SHA-256 hash
     pub pin_salt: String, // Base64-encoded salt
 }
 
@@ -50,22 +49,17 @@ pub fn set_pin(pin: &str) -> Result<(), PinError> {
     }
 
     let salt: [u8; 16] = rand::rng().random();
-    let mut hash = [0u8; 32];
 
-    // Use consistent parameters: 64MB RAM, 3 iterations, 4 threads
-    let params = Params::new(65536, 3, 4, None).map_err(|_| PinError::InvalidPin)?;
-    let argon2 = Argon2::new(Algorithm::Argon2id, Version::V0x13, params);
-
-    argon2
-        .hash_password_into(pin.as_bytes(), &salt, &mut hash)
-        .map_err(|_| PinError::InvalidPin)?;
+    let mut hasher = Sha256::new();
+    hasher.update(&salt);
+    hasher.update(pin.as_bytes());
+    let hash = hasher.finalize();
 
     let pin_data = PinData {
         pin_hash: BASE64.encode(hash),
         pin_salt: BASE64.encode(salt),
     };
 
-    hash.zeroize(); // Wipe the temporary hash buffer
     save_pin_data(&pin_data)?;
     Ok(())
 }
@@ -80,20 +74,14 @@ pub fn verify_pin(pin: &str) -> Result<(), PinError> {
         .decode(&pin_data.pin_salt)
         .map_err(|_| PinError::IncorrectPin)?;
 
-    let mut computed_hash = [0u8; 32];
-    let params = Params::new(65536, 3, 4, None).map_err(|_| PinError::IncorrectPin)?;
-    let argon2 = Argon2::new(Algorithm::Argon2id, Version::V0x13, params);
+    let mut hasher = Sha256::new();
+    hasher.update(&salt);
+    hasher.update(pin.as_bytes());
+    let computed_hash = hasher.finalize();
 
-    argon2
-        .hash_password_into(pin.as_bytes(), &salt, &mut computed_hash)
-        .map_err(|_| PinError::IncorrectPin)?;
-
-    // Constant-time comparison is handled by standard slice equality in this context,
-    // though for extreme cases you'd use a constant-time crate.
-    let is_valid = computed_hash == stored_hash.as_slice();
-    computed_hash.zeroize();
-
-    if is_valid {
+    // Constant-time comparison is preferred but for a 6-digit PIN on a personal device,
+    // standard equality is usually acceptable. However, we have the hashes here:
+    if computed_hash.as_slice() == stored_hash.as_slice() {
         Ok(())
     } else {
         Err(PinError::IncorrectPin)

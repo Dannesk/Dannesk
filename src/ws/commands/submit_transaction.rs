@@ -1,6 +1,5 @@
 use crate::channel::{CHANNEL, ProgressState, WSCommand};
 use crate::ws::commands::{transaction_builder, transaction_sender, validation, wallet_auth};
-use crate::ws::connection::ConnectionManager;
 use serde_json::Value;
 use tokio_tungstenite::tungstenite::Message;
 
@@ -11,15 +10,17 @@ struct LedgerData {
 }
 
 pub async fn execute(
-    connection: &mut ConnectionManager,
-    current_wallet: &mut String,
+    current_wallet: String,
     cmd: WSCommand,
 ) -> Result<(), String> {
-    // Validate inputs
-    let (tx_type, wallet, _passphrase) = validation::validate_inputs(&cmd, current_wallet)?;
+    // Local mutable copy because validation::validate_inputs requires &mut String
+    let mut wallet_copy = current_wallet;
 
-    // Fetch ledger data
-    let (sequence, fee) = crate::ws::commands::ledger::fetch_ledger_data(connection, &wallet)
+    // Validate inputs
+    let (tx_type, wallet, _passphrase) = validation::validate_inputs(&cmd, &mut wallet_copy)?;
+
+    // Fetch ledger data - now uses the oneshot system internally
+    let (sequence, fee) = crate::ws::commands::ledger::fetch_ledger_data(&wallet)
         .await
         .map_err(|_| {
             let _ = CHANNEL.progress_tx.send(Some(ProgressState {
@@ -30,19 +31,24 @@ pub async fn execute(
         })?;
     let ledger_data = LedgerData { sequence, fee };
 
+    // 1. Authenticate wallet - Moved to spawn_blocking to avoid blocking the crypto loop
+    let cmd_clone = cmd.clone();
+    let wallet_clone = wallet.clone();
+    let wallet_obj = tokio::task::spawn_blocking(move || {
+        wallet_auth::authenticate_wallet(
+            cmd_clone.passphrase,
+            cmd_clone.seed,
+            cmd_clone.bip39,
+            &wallet_clone,
+        )
+    })
+    .await
+    .map_err(|e| format!("Internal thread error: {}", e))??;
+
     let _ = CHANNEL.progress_tx.send(Some(ProgressState {
-        progress: 0.4,
+        progress: 0.6,
         message: "constructing blob".to_string(),
     }));
-
-    // 1. Authenticate wallet
-    // FIX: Cloning here now produces Zeroizing<String>, maintaining security.
-    let wallet_obj = wallet_auth::authenticate_wallet(
-        cmd.passphrase.clone(),
-        cmd.seed.clone(),
-        cmd.bip39.clone(),
-        &wallet,
-    )?;
 
     // 2. Construct transaction blob
     let tx_blob = transaction_builder::construct_blob(
@@ -54,7 +60,8 @@ pub async fn execute(
     )
     .await?;
 
-    transaction_sender::send_transaction(connection, &wallet, &tx_type, tx_blob).await?;
+    // Now uses the updated sender that uses CRYPTO_OUTGOING_TX
+    transaction_sender::send_transaction(&wallet, &tx_type, tx_blob).await?;
 
     Ok(())
 }

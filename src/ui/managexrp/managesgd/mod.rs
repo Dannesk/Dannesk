@@ -6,7 +6,7 @@ use dioxus_native::prelude::*;
 pub mod enable_logic;
 use enable_logic::SgdEnableLogic;
 pub mod sgdbalance;
-use crate::utils::enable_token_layout::render_token_enable;
+use crate::ui::components::enable_token_layout::render_token_enable;
 
 #[component]
 pub fn render_sgd_balance() -> Element {

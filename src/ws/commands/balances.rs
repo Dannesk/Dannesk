@@ -1,5 +1,5 @@
 use crate::channel::{CHANNEL, WSCommand};
-use crate::ws::connection::ConnectionManager;
+use crate::ws::CRYPTO_OUTGOING_TX;
 use serde_json::{Value, json};
 use tokio_tungstenite::tungstenite::Message;
 
@@ -73,27 +73,26 @@ impl Asset {
 // ====================== Main Logic ======================
 
 pub async fn execute(
-    connection: &mut ConnectionManager,
-    _current_wallet: &mut String,
+    _current_wallet: String,
     cmd: WSCommand,
 ) -> Result<(), String> {
     let wallet = cmd.wallet.as_ref().ok_or("Missing wallet parameter")?;
 
     // Determine which command to send based on the WSCommand type/context
-    // Usually, client-initiated balance refreshes are for issued currencies.
-    // XRP is typically pushed by the backend, but we can support it here if needed.
-    let command = match cmd.command.as_str() {
-        "get_rlusd_balance" => "get_rlusd_balance",
-        "get_euro_balance" => "get_euro_balance",
-        "get_xsgd_balance" => "get_xsgd_balance",
-        _ => return Ok(()), // Ignore unknown balance requests
-    };
+    if Asset::from_command(&cmd.command).is_none() {
+        return Ok(());
+    }
 
-    let msg = json!({ "command": command, "wallet": wallet });
-    connection.send(Message::text(msg.to_string())).await
+    let msg = json!({ "command": cmd.command, "wallet": wallet });
+
+    if let Some(tx) = CRYPTO_OUTGOING_TX.get() {
+        tx.send(Message::text(msg.to_string())).await.map_err(|e| e.to_string())?;
+    }
+
+    Ok(())
 }
 
-pub async fn process_response(message: Message, current_wallet: &str) -> Result<(), String> {
+pub async fn process_response(message: Message, _current_wallet: &str) -> Result<(), String> {
     let Message::Text(text) = message else {
         return Err("Non-text message received".to_string());
     };
@@ -105,10 +104,6 @@ pub async fn process_response(message: Message, current_wallet: &str) -> Result<
         .get("wallet")
         .and_then(|w| w.as_str())
         .ok_or("Missing wallet field")?;
-
-    if wallet != current_wallet {
-        return Ok(());
-    }
 
     let command_str = data
         .get("command")

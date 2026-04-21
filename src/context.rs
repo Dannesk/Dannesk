@@ -1,15 +1,17 @@
 // src/context.rs
 use crate::channel::{
-    BtcModalState, BtcSignTransactionState, BtcTransactionState, Theme, BtcWalletProcessState, CHANNEL,
-    ProgressState, SideBarView, SignTradeState, SignTransactionState, Tab, TransactionState,
-    WSCommand, XrpModalState, XrpWalletProcessState,
+    // Added AppSettings and BalanceActiveView
+    BalanceActiveView, BtcModalState, BtcSignTransactionState, 
+    BtcTransactionState, Theme, BtcWalletProcessState, CHANNEL,
+    ProgressState, SignTradeState, SignTransactionState, 
+    Tab, TransactionState, WSCommand, XrpModalState, XrpWalletProcessState,
 };
 use dioxus_native::prelude::*;
 use std::collections::HashMap;
-use tokio::sync::mpsc; // Sender
-use tokio::sync::watch; // Receiver
+use tokio::sync::mpsc;
+use tokio::sync::watch;
 
-// Structs
+// --- Context Structs ---
 
 #[derive(Clone)]
 pub struct GlobalContext {
@@ -21,7 +23,12 @@ pub struct GlobalContext {
     pub exchange_ws_status: Signal<bool>,
     pub crypto_ws_status: Signal<bool>,
     pub ws_tx: mpsc::Sender<WSCommand>,
-    pub sidebar_view: Signal<SideBarView>,
+}
+
+#[derive(Clone, Copy)]
+pub struct BalanceContext {
+    // Added Balance View State
+    pub balance_view: Signal<BalanceActiveView>,
 }
 
 #[derive(Clone, Copy)]
@@ -58,9 +65,10 @@ pub struct BtcContext {
     pub btc_sign_transaction: Signal<BtcSignTransactionState>,
 }
 
-// Call this in App component.
+// --- Setup Function ---
+
 pub fn setup_contexts(ws_tx: mpsc::Sender<WSCommand>) {
-    // Global Context
+    // 1. Global Context
     let global = GlobalContext {
         theme_user: use_signal(|| *CHANNEL.theme_user_rx.borrow()),
         rates: use_signal(|| CHANNEL.rates_rx.borrow().clone()),
@@ -70,24 +78,25 @@ pub fn setup_contexts(ws_tx: mpsc::Sender<WSCommand>) {
         exchange_ws_status: use_signal(|| *CHANNEL.exchange_ws_status_rx.borrow()),
         crypto_ws_status: use_signal(|| *CHANNEL.crypto_ws_status_rx.borrow()),
         ws_tx,
-        sidebar_view: use_signal(|| *CHANNEL.sidebar_view_rx.borrow()),
     };
     use_context_provider(|| global.clone());
 
-    // Spawn coroutines for global channels
     subscribe_to_channel(global.theme_user, CHANNEL.theme_user_rx.clone());
     subscribe_to_channel(global.rates, CHANNEL.rates_rx.clone());
     subscribe_to_channel(global.selected_tab, CHANNEL.selected_tab_rx.clone());
     subscribe_to_channel(global.progress, CHANNEL.progress_rx.clone());
     subscribe_to_channel(global.version, CHANNEL.version_rx.clone());
-    subscribe_to_channel(
-        global.exchange_ws_status,
-        CHANNEL.exchange_ws_status_rx.clone(),
-    );
+    subscribe_to_channel(global.exchange_ws_status, CHANNEL.exchange_ws_status_rx.clone());
     subscribe_to_channel(global.crypto_ws_status, CHANNEL.crypto_ws_status_rx.clone());
-    subscribe_to_channel(global.sidebar_view, CHANNEL.sidebar_view_rx.clone());
 
-    // XRP Context
+    // 2. Balance Context
+    let balance = BalanceContext {
+        balance_view: use_signal(|| *CHANNEL.balance_view_rx.borrow()),
+    };
+    use_context_provider(|| balance);
+    subscribe_to_channel(balance.balance_view, CHANNEL.balance_view_rx.clone());
+
+    // 3. XRP Context
     let xrp = XrpContext {
         wallet_balance: use_signal(|| CHANNEL.wallet_balance_rx.borrow().clone()),
         xrp_modal: use_signal(|| CHANNEL.xrp_modal_rx.borrow().clone()),
@@ -105,31 +114,20 @@ pub fn setup_contexts(ws_tx: mpsc::Sender<WSCommand>) {
     subscribe_to_channel(xrp.transactions, CHANNEL.transactions_rx.clone());
     subscribe_to_channel(xrp.trade, CHANNEL.trade_rx.clone());
 
-    // RLUSD Context
-    let rlusd = RlusdContext {
-        rlusd: use_signal(|| *CHANNEL.rlusd_rx.borrow()),
-    };
+    // 4. RLUSD / SGD / Euro Contexts
+    let rlusd = RlusdContext { rlusd: use_signal(|| *CHANNEL.rlusd_rx.borrow()) };
     use_context_provider(|| rlusd);
-
     subscribe_to_channel(rlusd.rlusd, CHANNEL.rlusd_rx.clone());
 
-    // SGD Context
-    let sgd = SgdContext {
-        sgd: use_signal(|| *CHANNEL.sgd_rx.borrow()),
-    };
+    let sgd = SgdContext { sgd: use_signal(|| *CHANNEL.sgd_rx.borrow()) };
     use_context_provider(|| sgd);
-
     subscribe_to_channel(sgd.sgd, CHANNEL.sgd_rx.clone());
 
-    // Euro Context
-    let euro = EuroContext {
-        euro: use_signal(|| *CHANNEL.euro_rx.borrow()),
-    };
+    let euro = EuroContext { euro: use_signal(|| *CHANNEL.euro_rx.borrow()) };
     use_context_provider(|| euro);
-
     subscribe_to_channel(euro.euro, CHANNEL.euro_rx.clone());
 
-    // BTC Context
+    // 5. BTC Context
     let btc = BtcContext {
         bitcoin_wallet: use_signal(|| CHANNEL.bitcoin_wallet_rx.borrow().clone()),
         btc_modal: use_signal(|| CHANNEL.btc_modal_rx.borrow().clone()),
@@ -142,17 +140,12 @@ pub fn setup_contexts(ws_tx: mpsc::Sender<WSCommand>) {
     subscribe_to_channel(btc.bitcoin_wallet, CHANNEL.bitcoin_wallet_rx.clone());
     subscribe_to_channel(btc.btc_modal, CHANNEL.btc_modal_rx.clone());
     subscribe_to_channel(btc.btc_transactions, CHANNEL.btc_transactions_rx.clone());
-    subscribe_to_channel(
-        btc.btc_wallet_process,
-        CHANNEL.btc_wallet_process_rx.clone(),
-    );
-    subscribe_to_channel(
-        btc.btc_sign_transaction,
-        CHANNEL.btc_sign_transaction_rx.clone(),
-    );
+    subscribe_to_channel(btc.btc_wallet_process, CHANNEL.btc_wallet_process_rx.clone());
+    subscribe_to_channel(btc.btc_sign_transaction, CHANNEL.btc_sign_transaction_rx.clone());
 }
 
-// Generic subscription coroutine (reuse for all channels)
+// --- Subscription Helper ---
+
 fn subscribe_to_channel<T: Clone + PartialEq + 'static>(
     mut signal: Signal<T>,
     rx: watch::Receiver<T>,
@@ -162,7 +155,6 @@ fn subscribe_to_channel<T: Clone + PartialEq + 'static>(
         async move {
             while rx.changed().await.is_ok() {
                 let new_val = rx.borrow().clone();
-                // only set if data is actually different.
                 if new_val != *signal.read() {
                     signal.set(new_val);
                 }

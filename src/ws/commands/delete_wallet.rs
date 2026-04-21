@@ -1,62 +1,41 @@
 use crate::channel::{CHANNEL, ProgressState, WSCommand};
-use crate::ws::connection::ConnectionManager;
+use crate::ws::CRYPTO_OUTGOING_TX;
 use serde_json::{Value, json};
 use tokio_tungstenite::tungstenite::Message;
 
 pub async fn execute(
-    connection: &mut ConnectionManager,
-    current_wallet: &mut String,
+    _current_wallet: String,
     cmd: WSCommand,
 ) -> Result<(), String> {
-    if let Some(wallet) = cmd.wallet.clone() {
+    static FAILED: &str = "Error: Wallet deletion failed";
+    if let Some(wallet) = cmd.wallet {
         let msg_json = json!({"command": "delete_wallet", "wallet": wallet});
-        connection.send(Message::text(msg_json.to_string())).await?;
 
-        if wallet == *current_wallet {
-            *current_wallet = String::new();
+        if let Some(tx) = CRYPTO_OUTGOING_TX.get() {
+            if tx.send(Message::text(msg_json.to_string())).await.is_err() {
+                return Err(FAILED.to_string());
+            }
         }
         Ok(())
     } else {
-        Err("Missing wallet parameter".to_string())
+        Err(FAILED.to_string())
     }
 }
 
-pub async fn process_response(message: Message, current_wallet: &str) -> Result<(), String> {
-    if let Message::Text(text) = message {
-        let data: Value =
-            serde_json::from_str(&text).map_err(|e| format!("Failed to parse JSON: {}", e))?;
+pub async fn process_response(message: Message, _current_wallet: &str) -> Result<(), String> {
+    static FAILED: &str = "Error: Wallet deletion failed";
+    match message {
+        Message::Text(text) => {
+            let data: Value = serde_json::from_str(&text).map_err(|_| FAILED.to_string())?;
 
-        if data.get("command").and_then(|c| c.as_str()) != Some("delete_wallet") {
-            return Ok(());
-        }
-
-        if let Some(wallet) = data.get("wallet").and_then(|w| w.as_str()) {
-            if wallet != current_wallet {
-                return Ok(());
+            if data.get("status").and_then(|s| s.as_str()) == Some("deleted") {
+                let _ = CHANNEL.progress_tx.send(Some(ProgressState {
+                    progress: 1.0,
+                    message: "Wallet deleted successfully".to_string(),
+                }));
             }
-
-            if let Some(error) = data.get("error").and_then(|e| e.as_str()) {
-                CHANNEL
-                    .progress_tx
-                    .send(Some(ProgressState {
-                        progress: 1.0,
-                        message: format!("Failed to delete wallet: {}", error),
-                    }))
-                    .map_err(|e| format!("Failed to send progress: {}", e))?;
-            } else if data.get("status").and_then(|s| s.as_str()) == Some("deleted") {
-                CHANNEL
-                    .progress_tx
-                    .send(Some(ProgressState {
-                        progress: 1.0,
-                        message: "Wallet deleted successfully".to_string(),
-                    }))
-                    .map_err(|e| format!("Failed to send progress: {}", e))?;
-            } else {
-                return Err("Unexpected delete_wallet response".to_string());
-            }
-        } else {
-            return Err("Missing wallet field".to_string());
         }
+        _ => {}
     }
     Ok(())
 }

@@ -3,7 +3,7 @@
 
 use crate::channel::BtcWalletProcessState;
 use crate::context::{BtcContext, GlobalContext};
-use crate::utils::import_seed_layout::ImportSeedForm;
+use crate::ui::components::import_seed_layout::ImportSeedForm;
 use dioxus_native::prelude::*;
 use zeroize::Zeroizing;
 

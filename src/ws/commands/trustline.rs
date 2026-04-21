@@ -20,7 +20,6 @@ impl Asset {
     }
 
     fn get_state(&self) -> (f64, bool, Option<f64>) {
-        // ← fixed tuple
         match self {
             Asset::Rlusd => *CHANNEL.rlusd_rx.borrow(),
             Asset::Euro => *CHANNEL.euro_rx.borrow(),
@@ -29,7 +28,6 @@ impl Asset {
     }
 
     fn send(&self, balance: f64, has: bool, limit: Option<f64>) -> Result<(), String> {
-        // ← fixed signature
         match self {
             Asset::Rlusd => CHANNEL.rlusd_tx.send((balance, has, limit)),
             Asset::Euro => CHANNEL.euro_tx.send((balance, has, limit)),
@@ -40,29 +38,19 @@ impl Asset {
 }
 
 pub async fn execute(
-    _connection: &mut crate::ws::connection::ConnectionManager,
-    _current_wallet: &mut String,
+    _current_wallet: String,
     _cmd: crate::channel::WSCommand,
 ) -> Result<(), String> {
     Ok(())
 }
 
-pub async fn process_response(message: Message, current_wallet: &str) -> Result<(), String> {
+pub async fn process_response(message: Message, _current_wallet: &str) -> Result<(), String> {
     let Message::Text(text) = message else {
         return Err("Non-text message received".to_string());
     };
 
     let data: Value =
         serde_json::from_str(&text).map_err(|e| format!("Failed to parse JSON: {}", e))?;
-
-    let wallet = data
-        .get("wallet")
-        .and_then(|w| w.as_str())
-        .ok_or_else(|| "Missing wallet field".to_string())?;
-
-    if wallet != current_wallet {
-        return Ok(());
-    }
 
     let command = data
         .get("command")

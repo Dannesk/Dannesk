@@ -6,7 +6,6 @@ use crate::utils::styles;
 use arboard::Clipboard;
 use dioxus_native::prelude::*;
 
-pub mod sendlogic;
 pub mod step1;
 pub mod step2;
 pub mod step3;

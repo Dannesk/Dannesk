@@ -1,5 +1,5 @@
 use crate::context::XrpContext;
-use crate::utils::send_review_layout::render_send_review;
+use crate::ui::components::send_review_layout::render_send_review;
 use dioxus_native::prelude::*;
 
 #[component]

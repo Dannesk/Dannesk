@@ -1,4 +1,5 @@
 use zeroize::Zeroizing;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum Tab {
@@ -7,18 +8,10 @@ pub enum Tab {
     Btc,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Theme {
     Light,
     Dark,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Copy)]
-pub enum SideBarView {
-    None,
-    ChangePin,
-    ExchangeRates,
-    NetworkStatus,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -27,7 +20,15 @@ pub struct ProgressState {
     pub message: String,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BalanceActiveView {
+    Main,
+    Settings,
+    ChangePin,
+}
+
+
+#[derive(Debug, Default, Clone)]
 pub struct WSCommand {
     pub command: String,
     pub wallet: Option<String>,
