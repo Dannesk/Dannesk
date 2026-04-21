@@ -44,8 +44,10 @@ pub fn view() -> Element {
                 width: 100%;
                 align-items: center; 
                 padding-top: 4rem;
+                padding-bottom: 2rem;
                 color: var(--text);
                 font-family: 'JetBrains Mono', monospace;
+                box-sizing: border-box;
             }
             .back-button-container {
                 position: absolute;
@@ -56,7 +58,7 @@ pub fn view() -> Element {
             }
             .section-label {
                 width: 100%;
-                max-width: 1000px;
+                max-width: 800px;
                 font-size: 0.65rem;
                 color: var(--text-secondary);
                 letter-spacing: 2px;
@@ -64,45 +66,64 @@ pub fn view() -> Element {
                 padding-left: 8px;
                 margin-bottom: 1rem;
             }
-            .tx-table {
+            .tx-list {
                 display: flex;
                 flex-direction: column;
-                width: 1000px; 
-                min-width: 1000px; 
-                border: 1px solid var(--border);
-                background: var(--bg-primary);
+                width: 100%;
+                max-width: 800px;
+                gap: 8px;
             }
-            .table-header {
+            .tx-card {
                 display: flex;
-                flex-direction: row;
+                flex-direction: column;
+                width: 100%;
                 background-color: var(--bg-grid);
-                border-bottom: 1px solid var(--border);
-                font-weight: 600;
-                color: var(--text-secondary);
-                font-size: 0.6rem;
+                border: 1px solid var(--border);
+                padding: 12px;
+                cursor: pointer;
+                box-sizing: border-box;
             }
-            .table-body {
-                display: flex;
-                flex-direction: column;
+            .tx-card:hover {
+                border-color: var(--accent);
             }
-            .table-row {
+            .tx-row {
                 display: flex;
                 flex-direction: row;
+                justify-content: space-between;
                 align-items: center;
-                border-bottom: 1px solid var(--bg-faint);
+                width: 100%;
             }
-            .col { 
-                flex: 1; 
-                padding: 10px 8px;
-                overflow: hidden; 
-                white-space: nowrap; 
-                text-overflow: ellipsis;
-                border-right: 1px solid var(--bg-faint);
+            .tx-mt-1 { margin-top: 4px; }
+            .tx-type { font-weight: 700; font-size: 0.8rem; text-transform: uppercase; color: var(--text); }
+            .tx-amount { font-weight: 700; white-space: nowrap;  font-size: 0.8rem; color: var(--accent); }
+            .tx-status { font-size: 0.65rem; font-weight: 700; }
+            .tx-date { font-size: 0.65rem; color: var(--text-secondary); }
+            
+            .tx-details {
+                display: flex;
+                flex-direction: column;
+                margin-top: 12px;
+                padding-top: 12px;
+                border-top: 1px solid rgba(255, 255, 255, 0.1);
+                gap: 8px;
+            }
+            .detail-row {
+                display: flex;
+                flex-direction: column;
+                gap: 2px;
+            }
+            .detail-label {
+                font-size: 0.55rem;
+                color: var(--text-secondary);
+                opacity: 0.7;
+            }
+            .detail-value {
                 font-size: 0.7rem;
+                color: var(--text-secondary);
+                overflow: hidden;
+                white-space: nowrap;
+                text-overflow: ellipsis;
             }
-            .col:last-child { border-right: none; }
-            .c-currency { color: var(--accent); font-weight: bold; }
-            .c-date { color: var(--text-secondary); }
         "#} }
 
         div { class: "tx-container",
@@ -114,31 +135,17 @@ pub fn view() -> Element {
 
             div { class: "section-label", "NETWORK_LOG // BITCOIN_TRANSACTIONS" }
 
-            div { class: "tx-table",
-                div { class: "table-header",
-                    div { class: "col", "TX_ID" }
-                    div { class: "col", "ASSET" }
-                    div { class: "col", "STATUS" }
-                    div { class: "col", "AMOUNT" }
-                    div { class: "col", "FEE" }
-                    div { class: "col", "SENDER" }
-                    div { class: "col", "RECV" }
-                    div { class: "col c-date", "DATE" }
-                }
-
-                div { class: "table-body",
-                    for (i, tx) in display_txs.iter().enumerate() {
-                        TransactionRow {
-                            key: "{tx.txid}",
-                            index: i,
-                            tx_id: tx.txid.clone(),
-                            status: tx.status.clone(),
-                            amount: tx.amount.clone(),
-                            fee: tx.fees.clone(),
-                            receivers: tx.receiver_addresses.clone(),
-                            senders: tx.sender_addresses.clone(),
-                            timestamp: tx.timestamp.clone(),
-                        }
+            div { class: "tx-list",
+                for tx in display_txs.into_iter() {
+                    TransactionCard {
+                        key: "{tx.txid}",
+                        tx_id: tx.txid.clone(),
+                        status: tx.status.clone(),
+                        amount: tx.amount.clone(),
+                        fee: tx.fees.clone(),
+                        receivers: tx.receiver_addresses.clone(),
+                        senders: tx.sender_addresses.clone(),
+                        timestamp: tx.timestamp.clone(),
                     }
                 }
             }
@@ -147,8 +154,7 @@ pub fn view() -> Element {
 }
 
 #[component]
-fn TransactionRow(
-    index: usize,
+fn TransactionCard(
     tx_id: String,
     status: BitcoinTransactionStatus,
     amount: String,
@@ -157,11 +163,7 @@ fn TransactionRow(
     senders: Vec<String>,
     timestamp: String,
 ) -> Element {
-    let bg_color = if index % 2 == 0 {
-        "transparent"
-    } else {
-        "var(--bg-faint)"
-    };
+    let mut expanded = use_signal(|| false);
 
     let (status_text, status_color) = match status {
         BitcoinTransactionStatus::Success => ("OK", "var(--status-ok)"),
@@ -170,40 +172,41 @@ fn TransactionRow(
         BitcoinTransactionStatus::Cancelled => ("VOID", "var(--text-secondary)"),
     };
 
-    let short_id = if tx_id.len() > 8 {
-        format!("{}..", &tx_id[..8])
-    } else {
-        tx_id.clone()
-    };
-
-    let format_addresses = |addrs: &[String]| {
-        if addrs.is_empty() {
-            return "—".to_string();
-        }
-        let joined = addrs.join(", ");
-        if joined.len() > 10 {
-            format!("{}..", &joined[..8])
-        } else {
-            joined
-        }
-    };
-
     let full_senders = senders.join(", ");
     let full_receivers = receivers.join(", ");
 
     rsx! {
         div {
-            class: "table-row",
-            style: "background-color: {bg_color};",
+            class: "tx-card",
+            onclick: move |_| expanded.toggle(),
 
-            div { class: "col", title: "{tx_id}", "{short_id}" }
-            div { class: "col c-currency", "BTC" }
-            div { class: "col", style: "color: {status_color}", "{status_text}" }
-            div { class: "col", "{amount}" }
-            div { class: "col", "{fee}" }
-            div { class: "col", title: "{full_senders}", "{format_addresses(&senders)}" }
-            div { class: "col", title: "{full_receivers}", "{format_addresses(&receivers)}" }
-            div { class: "col c-date", "{format_timestamp(&timestamp)}" }
+            div { class: "tx-row",
+                div { class: "tx-type", "BITCOIN" }
+                div { class: "tx-amount", "{amount} BTC" }
+            }
+            div { class: "tx-row tx-mt-1",
+                div { class: "tx-status", style: "color: {status_color};", "{status_text}" }
+                div { class: "tx-date", "{format_timestamp(&timestamp)}" }
+            }
+
+            if expanded() {
+                div { class: "tx-details",
+                    DetailItem { label: "TX_ID".to_string(), value: tx_id.clone() }
+                    DetailItem { label: "FEE".to_string(), value: fee.clone() }
+                    DetailItem { label: "SENDER".to_string(), value: full_senders }
+                    DetailItem { label: "RECEIVER".to_string(), value: full_receivers }
+                }
+            }
+        }
+    }
+}
+
+#[component]
+fn DetailItem(label: String, value: String) -> Element {
+    rsx! {
+        div { class: "detail-row",
+            div { class: "detail-label", "{label}" }
+            div { class: "detail-value", title: "{value}", "{value}" }
         }
     }
 }

@@ -3,7 +3,7 @@ use dioxus_native::prelude::*;
 #[component]
 pub fn BtcManageLayout(
     has_wallet: bool,
-    history_btn: Element,
+    history_btn: Option<Element>, 
     on_create_click: EventHandler<MouseEvent>,
     on_import_click: EventHandler<MouseEvent>,
     active_balance_view: Element,
@@ -124,7 +124,7 @@ pub fn BtcManageLayout(
                 }
             }
 
-            if has_wallet {
+            if has_wallet && history_btn.is_some() {
                 div { class: "term-sidebar-right",
                     {history_btn}
                 }

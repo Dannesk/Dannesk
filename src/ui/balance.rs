@@ -137,7 +137,7 @@ pub fn render_balance() -> Element {
             }
             .item-name { font-size: 0.85rem; color: var(--text-secondary); white-space: nowrap; opacity: 0.8; }
             .leader { flex: 1; border-bottom: 2px dotted var(--border); margin: 0 0.75rem; opacity: 0.3; transform: translateY(-4px); }
-            .item-value { font-size: 0.9rem; color: var(--accent); font-weight: bold; white-space: nowrap; }
+            .item-value { font-size: 0.9rem; color: var(--accent); white-space: nowrap; }
         "#} }
 
         div { class: "balance-container",

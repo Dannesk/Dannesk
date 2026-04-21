@@ -38,23 +38,52 @@ Supported assets include:
 
 Dannesk supports the optional BIP39 passphrase (sometimes called the 25th word). The 25th word allows for enhanced wallet security and the deterministic generation of multiple wallets from the same seed. 
 
-Upon import/create, users are prompted to choose their own encryption passphrase and bip39 passphrase. The private keys are then encrypted locally on the user’s device using AES-256 encryption and Argon2id for key derivation. Users may choose to remove the key by clicking "delete key" on the dashboard, reverting to cold storage.
+Upon import/create, users are prompted to choose their own encryption passphrase and bip39 passphrase. The private keys are then encrypted locally on the user’s device using AES-256 encryption and Argon2id for key derivation. 
 
 Transactions are **signed locally**. The signed transaction blob is then **broadcast to the network**. For added security, memory is also **zeroized** after signing operations. At no time does any sensitive data leave the user's device. 
   
 ---
 
-### Beta 
+### Encryption
 
-The desktop app is already very capable with most of the basic features users will need. However, it's still lacking intermediate features such as "replace by fee" (Bitcoin), disabling
-a trustline (XRP), and converting small balances (sometimes referred to as dust). 
+Dannesk uses AES-256 Encryption, along with Argon2id for password derivation. 
+---
 
-The mobile app is not yet ready for production. 
 
-We also hope to implement a few advanced features before v1.0.0 such as a federated bridge between XRP/BTC, allowing for decentralized swaps between the two chains. Fiat onboarding is also on the roadmap. 
+### Key Management
+
+Dannesk uses AES-256 Encryption, along with Argon2id for password derivation. 
+---
+
+### Desktop v0.4.0 
+
+
+
+Because we use dioxus native, a hyper-modern engine for the desktop app, which uses stylo/taffy/and the wgpu for rendering, older devices with outdated drivers may fail to render the UI correctly. 
+
+
+---
+
+
+### Android v0.4.0 
+
+The Android app is available for direct download as an APK, but is not yet available on the playstore. 
+The app uses a rust core for the communication layer and state management, and a very thin kotlin layer for rendering. 
+The app should work ony most devices; however, because we use Argon2id for key derivation, you may find older devices to be rather slow when importing/creating or sending a transaction. Newer devices should not have a problem. 
+
+---
+
+
+### Roadmap 
+
+1. Replace by Fee for Bitcoin
+2. Converting dust
+3. Loans for Bitcoin
+4. Federated Bridge between XRP and BTC
 
 We aim to release v1.0.0 for all platforms by the second quarter of 2027. 
-  
+
+
 ---
 
 ## Installation
@@ -67,6 +96,7 @@ Supported platforms:
 
 - Linux (.deb) 
 - Windows (.exe) 
+- Android (.apk)
 
 ---
 

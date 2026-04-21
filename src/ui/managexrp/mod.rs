@@ -34,6 +34,9 @@ pub fn render_manage_xrp() -> Element {
     let (_amount, address_opt, _) = xrp.wallet_balance.read().clone();
     let has_wallet = address_opt.is_some();
 
+    let has_transactions = !xrp.transactions.read().transactions.is_empty();
+    
+
     // === XRP RESERVE CALCULATION ===
     let xrp_reserve_info = use_memo(move || {
         let (xrp_amount, _, _) = xrp.wallet_balance.read().clone();
@@ -73,7 +76,7 @@ pub fn render_manage_xrp() -> Element {
         xrp_modal.with_mut(|s| s.view_type = ActiveView::Sgd)
     });
 
-    let trade_btn = terminal_action("TRADE", matches!(view_type, ActiveView::Trade), move |_| {
+    let trade_btn = terminal_action("DEX", matches!(view_type, ActiveView::Trade), move |_| {
         xrp_modal.with_mut(|state| {
             state.last_view = Some(ActiveView::Xrp);
             state.view_type = ActiveView::Trade;
@@ -87,12 +90,12 @@ pub fn render_manage_xrp() -> Element {
         });
     });
 
-    let history_btn = terminal_action("HISTORY", matches!(view_type, ActiveView::Transactions), move |_| {
-        xrp_modal.with_mut(|state| {
-            state.last_view = Some(ActiveView::Xrp);
-            state.view_type = ActiveView::Transactions;
-        });
+  let history_btn = terminal_action("TX_LOG", matches!(view_type, ActiveView::Transactions), move |_| {
+    xrp_modal.with_mut(|state| { 
+        state.last_view = Some(ActiveView::Xrp);
+        state.view_type = ActiveView::Transactions;
     });
+});
 
     // --- DETERMINE BALANCE VIEW ---
     let active_balance_view = match view_type {
@@ -111,7 +114,7 @@ pub fn render_manage_xrp() -> Element {
             nav_eur: nav_eur,
             nav_sgd: nav_sgd,
             trade_btn: trade_btn,
-            history_btn: history_btn,
+            history_btn: if has_transactions { Some(history_btn) } else { None },
             on_create_click: move |_| {
                 let mut entropy = [0u8; 32];
                 rng().fill_bytes(&mut entropy);

@@ -8,7 +8,7 @@ pub fn XrpManageLayout(
     nav_eur: Element,
     nav_sgd: Element,
     trade_btn: Element,
-    history_btn: Element,
+    history_btn: Option<Element>, 
     on_create_click: EventHandler<MouseEvent>,
     on_import_click: EventHandler<MouseEvent>,
     active_balance_view: Element,
@@ -134,11 +134,13 @@ pub fn XrpManageLayout(
                 }
             }
 
-            div { class: "term-sidebar",
+          div { class: "term-sidebar",
                 style: "align-items: flex-end;",
                 if has_wallet {
                     {trade_btn}
-                    {history_btn}
+                    if let Some(btn) = history_btn {
+                        {btn}
+                    }
                 }
             }
         }

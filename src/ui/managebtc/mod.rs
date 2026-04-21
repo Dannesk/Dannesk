@@ -16,6 +16,8 @@ pub mod btcsend;
 pub mod btctransactions;
 pub mod receive;
 
+// src/ui/managebtc/mod.rs
+
 #[component]
 pub fn render_manage_btc() -> Element {
     let btc_ctx = use_context::<BtcContext>();
@@ -26,6 +28,9 @@ pub fn render_manage_btc() -> Element {
     let view_type = btc_modal.read().view_type;
     let (_balance, address_opt, _) = btc_ctx.bitcoin_wallet.read().clone();
     let has_wallet = address_opt.is_some();
+
+    // Check if we actually have transaction history to display
+    let has_transactions = !btc_ctx.btc_transactions.read().transactions.is_empty();
 
     // --- THE GATE ---
     match view_type {
@@ -39,7 +44,7 @@ pub fn render_manage_btc() -> Element {
 
     // --- TERMINAL ACTIONS ---
     let history_btn = terminal_action(
-        "HISTORY",
+        "TX_LOG",
         matches!(view_type, BtcActiveView::Transactions),
         move |_| {
             btc_modal.with_mut(|s| s.view_type = BtcActiveView::Transactions);
@@ -50,7 +55,8 @@ pub fn render_manage_btc() -> Element {
     rsx! {
         BtcManageLayout {
             has_wallet: has_wallet,
-            history_btn: history_btn,
+            // Only pass the button if there is data to see
+            history_btn: if has_transactions { Some(history_btn) } else { None },
             on_create_click: move |_| {
                 let mut entropy = [0u8; 32];
                 rng().fill_bytes(&mut entropy);
