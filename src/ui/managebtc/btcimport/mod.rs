@@ -2,7 +2,6 @@
 use crate::channel::BtcActiveView;
 use crate::context::BtcContext;
 use crate::utils::styles;
-use arboard::Clipboard;
 use dioxus_native::prelude::*;
 
 pub mod step1;
@@ -19,11 +18,7 @@ pub fn view() -> Element {
     let modal_state = btc_wallet_process.read();
 
     let on_back_click = move |_| {
-        // 1. Clear clipboard immediately
-        if let Ok(mut ctx) = Clipboard::new() {
-            let _ = ctx.set_text("");
-        }
-
+      
         // 2. Handle Data: Step down
         btc_wallet_process.with_mut(|state| {
             if let Some(ref mut import) = state.import_wallet {

@@ -1,7 +1,6 @@
 use crate::channel::SignTransactionState;
 use crate::context::XrpContext;
 use crate::utils::styles;
-use arboard::Clipboard;
 use dioxus_native::prelude::*; // Added for clipboard clearing
 
 pub mod step1;
@@ -19,9 +18,7 @@ pub fn view() -> Element {
     let current_send = &sign_state.send_transaction;
 
     let on_back_click = move |_| {
-        if let Ok(mut ctx) = Clipboard::new() {
-            let _ = ctx.set_text("");
-        }
+      
 
         sign_transaction.with_mut(|state: &mut SignTransactionState| {
             if let Some(ref mut send) = state.send_transaction {

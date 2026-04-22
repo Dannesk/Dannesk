@@ -3,7 +3,6 @@
 use crate::channel::BtcSignTransactionState;
 use crate::context::BtcContext;
 use crate::utils::styles;
-use arboard::Clipboard;
 use dioxus_native::prelude::*;
 
 pub mod step1;
@@ -22,9 +21,7 @@ pub fn view() -> Element {
     let current_send = &sign_state.send_transaction;
 
     let on_back_click = move |_| {
-        if let Ok(mut ctx) = Clipboard::new() {
-            let _ = ctx.set_text("");
-        }
+   
 
         btc_sign_transaction.with_mut(|state: &mut BtcSignTransactionState| {
             if let Some(ref mut send) = state.send_transaction {

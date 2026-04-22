@@ -49,41 +49,54 @@ pub fn XrpManageLayout(
                 width: 100%;
                 gap: 2rem;
             }
-            .term-card {
+
+            /* NEW DIAGNOSTIC MODULE CARDS */
+            .module-box {
                 flex: 1;
-                border: 1px solid var(--border); 
+                background: var(--bg-grid);
+                border: 1px solid var(--border);
                 padding: 1.5rem;
                 display: flex;
                 flex-direction: column;
-                gap: 1.5rem;
+                gap: 1.25rem;
                 cursor: pointer;
                 transition: all 0.2s ease;
             }
-            .term-card:hover {
+            .module-box:hover {
                 border-color: var(--accent);
-                background: var(--bg-faint);
             }
-            .term-card-header {
-                font-family: monospace;
-                font-weight: bold;
-                border-bottom: 1px dashed var(--border);
-                padding-bottom: 0.5rem;
-                white-space: nowrap;
+                  .section-label {
+                font-family: 'JetBrains Mono', monospace;
+                font-size: 0.65rem;
+                color: var(--text-secondary);
+                letter-spacing: 2px;
+                border-left: 2px solid var(--accent);
+                padding-left: 8px;
             }
-            .term-card-text {
-                font-family: monospace;
-                font-size: 0.9rem;
-                line-height: 1.4;
-                opacity: 0.7;
-                width: 100%;
+            .module-desc {
+                font-family: 'JetBrains Mono', monospace;
+                font-size: 0.8rem;
+                color: var(--text-secondary);
+                line-height: 1.5;
                 flex: 1;
             }
-            .term-card-footer {
-                font-family: monospace;
-                font-size: 0.8rem;
-                color: var(--accent);
-                opacity: 0.8;
+            .diag-row {
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
             }
+            .diag-label {
+                font-size: 0.6rem;
+                color: var(--text-secondary);
+                opacity: 0.7;
+                letter-spacing: 1px;
+            }
+            .diag-value {
+                font-size: 0.75rem;
+                font-weight: bold;
+                color: var(--text);
+            }
+            
         "#} }
 
         div { class: "terminal-viewport",
@@ -100,32 +113,60 @@ pub fn XrpManageLayout(
                 if !has_wallet {
                     div { class: "setup-container",
                         div { 
-                            style: "display: flex; flex-direction: column; align-items: center; font-family: monospace; opacity: 0.6; white-space: nowrap;",
-                            div { "> CHECKING.XRP.FILE: NO_LOCAL_KEYPAIR_DETECTED" }
-                            div { "> PLEASE_CREATE_OR_IMPORT_A_WALLET" }
+                            style: "display: flex; flex-direction: column; align-items: center; font-family: 'JetBrains Mono', monospace; opacity: 0.6; white-space: nowrap;",
+                             div { "> LOCAL.XRP.FILE: NOT_DETECTED" }
+                             div { "> PLEASE_IMPORT_OR_CREATE_A_WALLET" }
                         }
 
                         div { class: "split-hero",
-                            // --- CREATE CARD ---
+                            // PROTOCOL 01: CREATE
                             div { 
-                                class: "term-card",
+                                class: "module-box",
                                 onclick: move |evt| on_create_click.call(evt),
-                                div { class: "term-card-header", "> CREATE_XRP_WALLET" }
-                                div { class: "term-card-text",
-                                    "Generate an XRP wallet. This creates a high-entropy 24-word mnemonic seed. The private keys are derived locally and never leave this machine's encrypted storage."
+                                div { class: "section-label", "CREATE_XRP_WALLET" }
+                                div { class: "module-desc",
+                                    "Generate a 24 word Mnemonic to create a new wallet. "
                                 }
-                                div { class: "term-card-footer", "[ START_CREATE_FLOW ]" }
+                                div { 
+                                    style: "display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; padding-top: 1rem; border-top: 1px solid var(--border);",
+                                    div { class: "diag-row",
+                                        div { class: "diag-label", "CURVE" },
+                                        div { class: "diag-value", "ED25519" }
+                                    }
+                                     div { class: "diag-row",
+                                        div { class: "diag-label", "DERIVATION_PATH" },
+                                        div { class: "diag-value",  "m/44'/144'/0'/0/0" }
+                                    }
+                                    div { class: "diag-row",
+                                        div { class: "diag-label", "NETWORK" },
+                                        div { class: "diag-value",  "MAINNET/XRP" }
+                                    }
+                                }
                             }
 
-                            // --- IMPORT CARD ---
+                            // PROTOCOL 02: IMPORT
                             div { 
-                                class: "term-card",
+                                class: "module-box",
                                 onclick: move |evt| on_import_click.call(evt),
-                                div { class: "term-card-header", "> IMPORT_XRP_WALLET" }
-                                div { class: "term-card-text",
-                                    "Recover an existing wallet using your 24-word recovery phrase. Note: For security and derivation path standard compliance, we strictly require 24 words for XRP imports."
+                                div { class: "section-label", "IMPORT_XRP_WALLET" }
+                                div { class: "module-desc",
+                                    "Import an existing wallet using your 24-word mnemonic."
                                 }
-                                div { class: "term-card-footer", "[ START_IMPORT_FLOW ]" }
+                                div { 
+                                    style: "display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; padding-top: 1rem; border-top: 1px solid var(--border);",
+                                    div { class: "diag-row",
+                                        div { class: "diag-label", "REQUIREMENT" },
+                                        div { class: "diag-value", "24_WORDS" }
+                                    }
+                                     div { class: "diag-row",
+                                        div { class: "diag-label", "OPTIONAL" },
+                                        div { class: "diag-value", "BIP39 (25th Word)" }
+                                    }
+                                    div { class: "diag-row",
+                                        div { class: "diag-label", "NETWORK" },
+                                        div { class: "diag-value", "MAINNET/XRP" }
+                                    }
+                                }
                             }
                         }
                     }
@@ -134,7 +175,7 @@ pub fn XrpManageLayout(
                 }
             }
 
-          div { class: "term-sidebar",
+            div { class: "term-sidebar",
                 style: "align-items: flex-end;",
                 if has_wallet {
                     {trade_btn}

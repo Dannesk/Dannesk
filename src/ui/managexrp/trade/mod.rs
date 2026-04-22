@@ -1,7 +1,6 @@
 use crate::channel::SignTradeState;
 use crate::context::XrpContext;
 use crate::utils::styles;
-use arboard::Clipboard;
 use dioxus_native::prelude::*;
 
 pub mod step1;
@@ -18,10 +17,7 @@ pub fn view() -> Element {
     let current_send = &trade_state.send_trade;
 
     let on_back_click = move |_| {
-        if let Ok(mut ctx) = Clipboard::new() {
-            let _ = ctx.set_text("");
-        }
-
+      
         trade.with_mut(|state: &mut SignTradeState| {
             if let Some(ref mut send) = state.send_trade {
                 if send.step == 1 {

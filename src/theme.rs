@@ -2,22 +2,22 @@
 
 pub const DARK_CSS: &str = r#"
 :root, .theme-root {
-    --bg-primary: #0a0a0a;
+    --bg-primary: #0D1111;
     --bg-secondary: #000000;     
     --bg-card: #141414;
     --bg-faint: #1c1c1c;         
-    --bg-grid: rgba(255, 255, 255, 0.02); /* Industrial dark tint */
+    --bg-grid: rgba(226, 232, 240, 0.02); 
     --border: #262626;
-    --input-border: rgba(255, 255, 255, 0.1);
-    --text: #e5e5e5;
-    --text-secondary: #737373;
+    --input-border: rgba(226, 232, 240, 0.1);
+    --text: #E2E8F0;
+    --text-secondary: #94A3B8;
     --btn: #141414;
-    --btn-hover: #ffffff;
-    --btn-active: #d4d4d4;
-    --accent: #ffffff;
-    --selection: rgba(255, 255, 255, 0.1);
+    --btn-hover: #E2E8F0;
+    --btn-active: #CBD5E1;
+    --accent: #E2E8F0;
+    --selection: rgba(226, 232, 240, 0.1);
     --input-bg: #0a0a0a;
-    --focus-ring: #525252;
+    --focus-ring: #475569;
     --status-ok: #10b981;
     --status-warn: #ef4444;
 }
@@ -41,45 +41,47 @@ pub const DARK_CSS: &str = r#"
 
 pub const LIGHT_CSS: &str = r#"
 :root, .theme-root {
-    /* Backgrounds */
-    --bg-primary: #f8fafc;       /* slate-50 */
-    --bg-secondary: #ffffff;     /* Pure white for cards to pop against slate-50 */
-    --bg-card: #ffffff;          
-    --bg-faint: #f1f5f9;         /* slate-100 for subtle offsets */
-    --bg-grid: #f8fafc; 
+    /* Backgrounds: Logo Background Base */
+    --bg-primary: #F8FAFC;       
+    --bg-secondary: #FFFFFF;     
+    --bg-card: #FFFFFF;          
+    --bg-faint: #F1F5F9;         
+    --bg-grid: rgba(13, 17, 17, 0.02); 
 
-    /* Borders & Dividers */
-    --border: #e2e8f0;           /* slate-200 (Matches your Hero's border-slate-200/80) */
-    --input-border: #cbd5e1;     /* slate-300 */
+    /* Borders & Dividers: Neutral Slate */
+    --border: #E2E8F0;           
+    --input-border: #CBD5E1;     
 
-    /* Text */
-    --text: #020617;             /* slate-950 (Primary Text) */
-    --text-secondary: #64748b;   /* slate-500 (Muted labels) */
-    --text-accent: #334155;      /* slate-700 (Logo/Sub-headers) */
+    /* Text: Obsidian Logo Primary */
+    --text: #0D1111;             
+    --text-secondary: #64748B;   
+    --text-accent: #334155;      
 
-    /* Interactive */
-    --btn: #020617;              /* slate-950 */
-    --btn-hover: #334155;        /* slate-700 */
-    --btn-active: #0f172a;       /* slate-900 */
-    --accent: #020617;           
+    /* Interactive: Obsidian Theme */
+    --btn: #0D1111;              
+    --btn-hover: #334155;        
+    --btn-active: #1A1F1F;       
+    --accent: #0D1111;           
     
-   --selection: #e2e8f0;
+    --selection: #E2E8F0;
     
-    --input-bg: #ffffff;
-    --focus-ring: #cbd5e1;       /* slate-300 */
+    --input-bg: #FFFFFF;
+    --focus-ring: #94A3B8;       
     
-    /* Status (Kept for functional clarity) */
-    --status-ok: #16a34a;        /* green-600 to match your pulse dot */
-    --status-warn: #dc2626;      /* red-600 */
+    /* Status */
+    --status-ok: #16A34A;        
+    --status-warn: #DC2626;      
 }
 
 .theme-root {
     background: var(--bg-primary);
     color: var(--text);
-    font-family: 'JetBrains Mono', monospace; /* Ensuring Mono parity with Hero */
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-.market-value, .monospace-data { font-family: 'JetBrains Mono', monospace; }
+.market-value, .monospace-data { 
+    font-family: 'JetBrains Mono', monospace; 
+}
 
 .theme-btn {
     background: transparent;
@@ -89,8 +91,7 @@ pub const LIGHT_CSS: &str = r#"
     font-weight: 500;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    font-size: 11px; /* Matching your Hero's small caps style */
+    font-size: 11px;
     transition: all 0.2s ease;
 }
-
 "#;

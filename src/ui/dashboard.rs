@@ -59,7 +59,7 @@ fn BottomDock() -> Element {
     let (theme, _) = *global.theme_user.read();
     let is_dark = matches!(theme, Theme::Dark);
 
-    let dock_bg = if is_dark { "#000000" } else { "#f8fafc" };
+    let dock_bg = if is_dark { "#transparent" } else { "#f8fafc" };
 
     // HIDE if a sidebar is open OR if progress is active
     if progress.is_some() {
