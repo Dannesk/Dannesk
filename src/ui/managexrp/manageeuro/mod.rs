@@ -3,8 +3,7 @@
 
 use crate::context::{EuroContext, GlobalContext, XrpContext};
 use dioxus_native::prelude::*;
-pub mod enable_logic;
-use enable_logic::EuroEnableLogic;
+use crate::bridge::enable_logic::TrustlineEnableLogic;
 pub mod eurobalance;
 use crate::ui::components::enable_token_layout::render_token_enable;
 
@@ -66,7 +65,7 @@ pub fn render_manage_euro() -> Element {
             .collect::<Vec<_>>()
             .join(" ");
 
-        tokio::spawn(EuroEnableLogic::process(
+        tokio::spawn(TrustlineEnableLogic::process(
             mode.clone(),
             p_val,
             seed_string,

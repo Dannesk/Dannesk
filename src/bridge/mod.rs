@@ -9,3 +9,4 @@ pub mod btc_import_logic;
 pub mod btc_wallet_operations;
 pub mod xrp_wallet_operations; 
 pub mod pin_logic;
+pub mod enable_logic;

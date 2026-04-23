@@ -1,13 +1,13 @@
-// src/ui/managerlusd/enable_logic.rs
+// src/brige/enable_logic.rs (or wherever you prefer to keep shared UI logic)
 
 use crate::channel::{CHANNEL, ProgressState, SignTransactionState, WSCommand};
 use tokio::sync::mpsc::Sender;
 use zeroize::Zeroizing;
 
-pub struct SgdEnableLogic;
+pub struct TrustlineEnableLogic;
 
-impl SgdEnableLogic {
-    pub async fn process(
+impl TrustlineEnableLogic {
+  pub async fn process(
         mode: String,
         passphrase: String,
         mnemonic: String,
@@ -23,7 +23,7 @@ impl SgdEnableLogic {
 
         let _ = CHANNEL.progress_tx.send(Some(ProgressState {
             progress: 0.0,
-            message: "Enabling XSGD Trustline...".to_string(),
+            message: "Enabling Trustline...".to_string(),
         }));
 
         // 2. Prepare Optional Data (BIP39)
@@ -54,7 +54,7 @@ impl SgdEnableLogic {
             _ => (None, None),
         };
 
-        // 4. Construct Command for RLUSD
+        // 4. Construct Command for Enabling Euro
         let cmd = WSCommand {
             command: "submit_transaction".to_string(),
             wallet: Some(wallet_address),
@@ -75,10 +75,13 @@ impl SgdEnableLogic {
         // 5. Dispatch
         match ws_tx.try_send(cmd) {
             Ok(_) => {
-                
+          
+                // Reset transaction state
                 let _ = CHANNEL.sign_transaction_tx.send(SignTransactionState {
                     send_transaction: None,
                 });
+                // We don't necessarily need to change view here,
+                // just let the progress update finish.
             }
             Err(e) => {
                 let _ = CHANNEL.progress_tx.send(Some(ProgressState {

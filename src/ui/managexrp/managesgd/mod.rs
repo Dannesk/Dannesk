@@ -3,8 +3,7 @@
 
 use crate::context::{GlobalContext, SgdContext, XrpContext};
 use dioxus_native::prelude::*;
-pub mod enable_logic;
-use enable_logic::SgdEnableLogic;
+use crate::bridge::enable_logic::TrustlineEnableLogic;
 pub mod sgdbalance;
 use crate::ui::components::enable_token_layout::render_token_enable;
 
@@ -65,7 +64,7 @@ pub fn render_sgd_balance() -> Element {
             .collect::<Vec<_>>()
             .join(" ");
 
-        tokio::spawn(SgdEnableLogic::process(
+        tokio::spawn(TrustlineEnableLogic::process(
             mode.clone(),
             p_val,
             seed_string,
