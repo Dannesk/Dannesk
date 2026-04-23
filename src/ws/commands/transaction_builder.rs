@@ -2,10 +2,10 @@
 use crate::channel::WSCommand;
 use crate::channel::{CHANNEL, ProgressState};
 use crate::ws::commands::{offer_create, payment, trustset};
-use xrpl::wallet::Wallet;
+use crate::ws::commands::wallet_auth::Bip44Wallet; // Adjust path if needed
 
 pub async fn construct_blob(
-    wallet_obj: &Wallet,
+    wallet_obj: &Bip44Wallet, // Changed from &Wallet
     cmd: &WSCommand,
     tx_type: &str,
     sequence: u32,
@@ -13,6 +13,7 @@ pub async fn construct_blob(
 ) -> Result<String, String> {
     let tx_blob = match tx_type {
         "payment" => payment::construct_blob(wallet_obj, cmd, sequence, fee).await,
+        // Note: You will eventually need to update trustset and offer_create signatures too
         "trustset" => trustset::construct_blob(wallet_obj, cmd, sequence, fee).await,
         "offer_create" => offer_create::construct_blob(wallet_obj, cmd, sequence, fee).await,
         _ => {

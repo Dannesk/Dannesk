@@ -8,14 +8,14 @@ use bitcoin::{CompressedPublicKey, Network};
 use std::str::FromStr;
 use tokio::sync::mpsc::Sender;
 use serde::Serialize;
-use serde_json::json; // <--- Added
+use serde_json::json; 
 use zeroize::{Zeroize, Zeroizing};
 
 use crate::channel::{
     BtcActiveView, BtcModalState, BtcWalletProcessState, CHANNEL, ProgressState, WSCommand,
 };
 use crate::encrypt::encrypt_data;
-use crate::bridge::json_storage::{write_json, remove_json}; // <--- Added remove_json
+use crate::bridge::json_storage::{write_json, remove_json}; 
 
 #[derive(Serialize)]
 struct EncryptedWalletData {
@@ -36,7 +36,7 @@ impl BTCCreateLogic {
     ) {
         let _ = CHANNEL.progress_tx.send(Some(ProgressState {
             progress: 0.0,
-            message: "Finalizing wallet creation...".to_string(),
+            message: "Deriving Bitcoin Wallet...".to_string(),
         }));
 
         let m_thread = mnemonic_phrase.clone();

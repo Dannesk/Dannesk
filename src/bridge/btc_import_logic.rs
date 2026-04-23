@@ -1,5 +1,11 @@
 // src/ui/managebtc/btcimport/btcimportlogic.rs
 
+use crate::channel::{
+    BtcActiveView, BtcModalState, BtcWalletProcessState, CHANNEL, ProgressState, WSCommand,
+};
+
+use crate::encrypt::encrypt_data;
+use crate::bridge::json_storage::{write_json, remove_json}; 
 use bip39::{Language, Mnemonic};
 use bitcoin::address::Address;
 use bitcoin::bip32::{DerivationPath, Xpriv};
@@ -11,11 +17,7 @@ use serde::Serialize;
 use serde_json::json; // <--- Ensure this is imported
 use zeroize::{Zeroize, Zeroizing};
 
-use crate::channel::{
-    BtcActiveView, BtcModalState, BtcWalletProcessState, CHANNEL, ProgressState, WSCommand,
-};
-use crate::encrypt::encrypt_data;
-use crate::bridge::json_storage::{write_json, remove_json}; // <--- Added remove_json
+
 
 #[derive(Serialize)]
 struct EncryptedWalletData {
@@ -36,7 +38,7 @@ impl BTCImportLogic {
     ) {
         let _ = CHANNEL.progress_tx.send(Some(ProgressState {
             progress: 0.0,
-            message: "Starting Bitcoin wallet import...".to_string(),
+            message: "Importing Bitcoin Wallet...".to_string(),
         }));
 
         let m_thread = mnemonic_phrase.clone();

@@ -22,7 +22,7 @@ pub async fn execute(
 
         if let Some(tx) = CRYPTO_OUTGOING_TX.get() {
             if tx.send(Message::text(msg_json.to_string())).await.is_err() {
-                cleanup_failed_import(); // Rollback local files on pipe error
+                cleanup_failed_import(); 
                 let _ = CHANNEL.progress_tx.send(Some(ProgressState {
                     progress: 1.0,
                     message: FAILED.to_string(),
@@ -58,7 +58,7 @@ pub async fn process_response(
             })?;
 
             if let Some(wallet) = data.get("wallet").and_then(|w| w.as_str()) {
-                // Files are already created by the logic layer, just update UI/Live state
+               
                 
                 let balance_btc = data
                     .get("balance")

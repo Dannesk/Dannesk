@@ -60,7 +60,7 @@ pub async fn process_response(message: Message, _current_wallet: &str) -> Result
     match message {
         Message::Text(text) => {
             let data: Value = serde_json::from_str(&text).map_err(|e| {
-                cleanup_failed_import(); // <--- Cleanup on Parse failure
+                cleanup_failed_import(); 
                 let _ = CHANNEL.progress_tx.send(Some(ProgressState {
                     progress: 1.0,
                     message: format!("{}: Failed to parse JSON: {}", FAILED, e),
@@ -70,8 +70,7 @@ pub async fn process_response(message: Message, _current_wallet: &str) -> Result
 
             // Check if server actually confirmed the import
             if let Some(wallet) = data.get("wallet").and_then(|w| w.as_str()) {
-                // We no longer write xrp.json here! 
-                // We just update the live UI channels.
+               
 
                 let balance_xrp = data
                     .get("balance")
@@ -100,7 +99,7 @@ pub async fn process_response(message: Message, _current_wallet: &str) -> Result
                     message: "Wallet imported successfully".to_string(),
                 }));
             } else {
-                // Server returned JSON but not a success/wallet
+                // Server returned JSON
                 cleanup_failed_import();
             }
         }

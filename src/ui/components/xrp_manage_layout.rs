@@ -131,7 +131,7 @@ pub fn XrpManageLayout(
                                     style: "display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; padding-top: 1rem; border-top: 1px solid var(--border);",
                                     div { class: "diag-row",
                                         div { class: "diag-label", "CURVE" },
-                                        div { class: "diag-value", "ED25519" }
+                                        div { class: "diag-value", "secp256k1" }
                                     }
                                      div { class: "diag-row",
                                         div { class: "diag-label", "DERIVATION_PATH" },

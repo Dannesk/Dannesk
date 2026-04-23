@@ -1,12 +1,14 @@
 // ws/commands/payment.rs
 // This module handles the blob creation for XRP, RLUSD, EURO, and SGD payments
 use crate::channel::WSCommand;
+use crate::ws::commands::wallet_auth::Bip44Wallet; // Adjust path if needed
 use rippled_binary_codec::serialize::serialize_tx;
 use std::borrow::Cow;
-use xrpl::models::transactions::payment::{Payment, PaymentFlag};
+use xrpl::models::transactions::payment::Payment;
 use xrpl::models::{Amount, IssuedCurrencyAmount, XRPAmount};
-use xrpl::transaction::sign;
-use xrpl::wallet::Wallet;
+//imports for manually signing
+use bitcoin::secp256k1::{Message, Secp256k1};
+use sha2::{Digest, Sha512};
 
 const RLUSD_ISSUER: &str = "rMxCKbEDwqr76QuheSUMdEGf4B9xJ8m5De";
 const EUROP_ISSUER: &str = "rMkEuRii9w9uBMQDnWV5AA43gvYZR9JxVK";
@@ -107,7 +109,7 @@ fn create_issued_amount(wallet_type: &str, amount_str: &str) -> Result<Amount<'s
 }
 
 pub async fn construct_blob(
-    wallet_obj: &Wallet,
+    wallet_obj: &Bip44Wallet,
     cmd: &WSCommand,
     sequence: u32,
     fee: String,
@@ -116,7 +118,6 @@ pub async fn construct_blob(
     let amount_str = cmd.amount.as_ref().ok_or("Missing amount")?;
     let wallet_type = cmd.wallet_type.as_ref().ok_or("Missing wallet_type")?;
 
-    // Parse and validate amount based on wallet_type
     let amount = match wallet_type.as_str() {
         "XRP" => {
             let amount_drops = xrp_str_to_drops(amount_str)?;
@@ -128,9 +129,12 @@ pub async fn construct_blob(
         _ => create_issued_amount(wallet_type.as_str(), amount_str)?,
     };
 
-    // Create the Payment transaction
-    let mut payment = Payment::new(
-        Cow::Owned(wallet_obj.classic_address.clone()),
+    // 1. Serialize Public Key (Compressed 33-bytes)
+    let pub_key_hex = hex::encode(wallet_obj.public_key.serialize()).to_uppercase();
+
+    // 2. Build the initial Payment object
+    let payment = Payment::new(
+        Cow::Owned(wallet_obj.address.clone()),
         None,
         Some(XRPAmount(Cow::Owned(fee))),
         None,
@@ -149,13 +153,56 @@ pub async fn construct_blob(
         None,
     );
 
-    // Sign and serialize the transaction
-    sign::<Payment, PaymentFlag>(&mut payment, wallet_obj, false)
-        .map_err(|e| format!("Failed to sign transaction: {:?}", e))?;
-    let tx_json = serde_json::to_string(&payment)
-        .map_err(|e| format!("Failed to serialize transaction: {}", e))?;
-    let tx_blob = serialize_tx(tx_json, false)
-        .ok_or_else(|| "Failed to encode transaction to hex".to_string())?;
+    // 3. Inject SigningPubKey into the JSON before the first serialization
+    let mut tx_json_val = serde_json::to_value(&payment)
+        .map_err(|e| format!("Serialization Error: {}", e))?;
+
+    if let Some(obj) = tx_json_val.as_object_mut() {
+        obj.insert("SigningPubKey".to_string(), serde_json::Value::String(pub_key_hex));
+    }
+
+    // 4. Create the Unsigned Binary Blob
+    let unsigned_tx_json = serde_json::to_string(&tx_json_val).unwrap();
+    let unsigned_hex = serialize_tx(unsigned_tx_json, false)
+        .ok_or_else(|| "Failed to encode unsigned hex".to_string())?;
+
+    let unsigned_bytes = hex::decode(&unsigned_hex)
+        .map_err(|_| "Hex Decode Error".to_string())?;
+
+    // 5. Construct the Signing Payload
+    // CRITICAL: Must be 0x53545800 (STX\0) for Transactions. 
+    // You had 0x53544E00 (STN\0) which is for Node manifests.
+    let mut payload = Vec::new();
+    payload.extend_from_slice(&[0x53, 0x54, 0x58, 0x00]); 
+    payload.extend_from_slice(&unsigned_bytes);
+
+    // 6. SHA-512 Half Hash
+    let mut hasher = Sha512::new();
+    hasher.update(&payload);
+    let full_hash = hasher.finalize();
+    
+    let mut message_hash = [0u8; 32];
+    message_hash.copy_from_slice(&full_hash[0..32]);
+
+    // 7. Sign with secp256k1
+    let secp = Secp256k1::new();
+    let message = Message::from_digest_slice(&message_hash)
+        .map_err(|_| "Invalid Digest".to_string())?;
+    
+    // sign_ecdsa ensures canonical (low-S) signatures by default
+    let sig = secp.sign_ecdsa(&message, &wallet_obj.secret_key);
+    let der_sig = sig.serialize_der();
+    let sig_hex = hex::encode(der_sig.as_ref()).to_uppercase();
+
+    // 8. Inject the TxnSignature into the final JSON
+    if let Some(obj) = tx_json_val.as_object_mut() {
+        obj.insert("TxnSignature".to_string(), serde_json::Value::String(sig_hex));
+    }
+
+    // 9. Final Serialization for Broadcast
+    let final_tx_json = serde_json::to_string(&tx_json_val).unwrap();
+    let tx_blob = serialize_tx(final_tx_json, false)
+        .ok_or_else(|| "Final Encoding Failed".to_string())?;
 
     Ok(tx_blob)
 }

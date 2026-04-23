@@ -2,12 +2,11 @@ use crate::channel::{CHANNEL, ProgressState};
 use crate::decrypt::decrypt_data;
 use crate::bridge::json_storage::read_json;
 use bip39::{Language, Mnemonic};
-use ripple_address_codec::{Ed25519, encode_seed};
+use bitcoin::bip32::{DerivationPath, Xpriv};
+use bitcoin::secp256k1::{PublicKey, Secp256k1, SecretKey};
 use serde::Deserialize;
-use xrpl::wallet::Wallet;
-use zeroize::Zeroizing;
-
-type Entropy = [u8; 16];
+use std::str::FromStr;
+use zeroize::{Zeroize, Zeroizing};
 
 // Matches the structure used in xrpimportlogic
 #[derive(Deserialize)]
@@ -18,12 +17,22 @@ struct EncryptedWalletData {
     iv: String,
 }
 
+/// A custom struct to hold our BIP44 derived keys since we can no longer 
+/// rely on xrpl::wallet::Wallet for m/44'/144'/0'/0/0 derivation.
+#[derive(Clone)]
+pub struct Bip44Wallet {
+    pub address: String,
+    pub secret_key: SecretKey,
+    pub public_key: PublicKey,
+    
+}
+
 pub fn authenticate_wallet(
     passphrase: Option<Zeroizing<String>>,
     seed: Option<Zeroizing<String>>,
     bip39: Option<Zeroizing<String>>,
     wallet_address: &str,
-) -> Result<Wallet, String> {
+) -> Result<Bip44Wallet, String> {
     let _ = CHANNEL.progress_tx.send(Some(ProgressState {
         progress: 0.4,
         message: "Authenticating wallet".to_string(),
@@ -32,7 +41,7 @@ pub fn authenticate_wallet(
     let mnemonic_phrase: Zeroizing<String> = match (passphrase, seed) {
         (None, Some(s)) => s,
         (Some(p), None) => {
-            // --- NEW FILE-BASED AUTHENTICATION ---
+            // --- FILE-BASED AUTHENTICATION ---
             let stored_data: EncryptedWalletData = read_json("xrp_encrypt.json").map_err(|e| {
                 let err_msg = format!("Error: XRP credentials not found: {}", e);
                 let _ = CHANNEL.progress_tx.send(Some(ProgressState {
@@ -76,7 +85,8 @@ pub fn authenticate_wallet(
     };
 
     // Use .as_str() to access the protected memory
-    let mnemonic = Mnemonic::parse_in_normalized(Language::English, mnemonic_phrase.as_str())
+    // Note: Mnemonic::parse_in rather than parse_in_normalized to match your create logic
+    let mnemonic = Mnemonic::parse_in(Language::English, mnemonic_phrase.as_str())
         .map_err(|_| {
             let _ = CHANNEL.progress_tx.send(Some(ProgressState {
                 progress: 1.0,
@@ -86,23 +96,53 @@ pub fn authenticate_wallet(
         })?;
 
     let seed_passphrase = bip39.as_deref().map(|s| s.as_str()).unwrap_or("");
-    let bip39_seed = mnemonic.to_seed(seed_passphrase);
+    let mut bip39_seed = mnemonic.to_seed(seed_passphrase);
+    
+    let secp = Secp256k1::new();
 
-    let entropy_slice: Entropy = bip39_seed[0..16].try_into().map_err(|_| {
-        let _ = CHANNEL.progress_tx.send(Some(ProgressState {
-            progress: 1.0,
-            message: "Error: Invalid BIP39 seed length".to_string(),
-        }));
-        "Error: Invalid BIP39 seed length".to_string()
-    })?;
+    // Derive master key
+    let xpriv = Xpriv::new_master(bitcoin::Network::Bitcoin, &bip39_seed)
+        .map_err(|e| {
+            bip39_seed.zeroize();
+            let err_msg = format!("Error: Failed to create master key: {}", e);
+            let _ = CHANNEL.progress_tx.send(Some(ProgressState {
+                progress: 1.0,
+                message: err_msg.clone(),
+            }));
+            err_msg
+        })?;
+        
+    bip39_seed.zeroize();
 
-    let base58_seed = encode_seed(&entropy_slice, &Ed25519);
+    // Standard BIP44 XRP Path
+    let path = DerivationPath::from_str("m/44'/144'/0'/0/0")
+        .map_err(|_| {
+            let err_msg = "Error: Invalid derivation path".to_string();
+            let _ = CHANNEL.progress_tx.send(Some(ProgressState {
+                progress: 1.0,
+                message: err_msg.clone(),
+            }));
+            err_msg
+        })?;
 
-    Wallet::new(&base58_seed, 0).map_err(|_| {
-        let _ = CHANNEL.progress_tx.send(Some(ProgressState {
-            progress: 1.0,
-            message: "Error: Invalid seed".to_string(),
-        }));
-        "Error: Invalid seed".to_string()
+    let child_xpriv = xpriv
+        .derive_priv(&secp, &path)
+        .map_err(|e| {
+            let err_msg = format!("Error: Derivation failed: {}", e);
+            let _ = CHANNEL.progress_tx.send(Some(ProgressState {
+                progress: 1.0,
+                message: err_msg.clone(),
+            }));
+            err_msg
+        })?;
+
+    // Extract raw secp256k1 secret and public keys
+    let secret_key = child_xpriv.private_key;
+    let public_key = child_xpriv.to_priv().public_key(&secp).inner; 
+
+    Ok(Bip44Wallet {
+        address: wallet_address.to_string(),
+        secret_key,
+        public_key,
     })
 }

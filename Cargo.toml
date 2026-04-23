@@ -11,7 +11,6 @@ winit = "0.31.0-beta.2"
 winit-core = "0.31.0-beta.2"
 xrpl-rust = "1.0.0"
 rippled_binary_codec = "0.0.5"
-ripple-address-codec = "0.1.1"
 chrono = "0.4.43"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.132"
@@ -35,6 +34,10 @@ image = { version = "0.25.6", default-features = false }
 mimalloc = { version = "0.1.48", optional = true }
 rustls = { version = "0.23", default-features = false, features = ["ring"] }
 sha2 = "0.11.0"
+hmac = "0.13.0"
+ripemd = "0.2.0"
+bs58 = { version = "0.5.1", features = ["check"] }
+hex = "0.4.3"
 
 [features]
 default = ["mimalloc"]
