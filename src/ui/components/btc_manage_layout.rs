@@ -73,13 +73,6 @@ pub fn BtcManageLayout(
                 border-left: 2px solid var(--accent);
                 padding-left: 8px;
             }
-            .module-desc {
-                font-family: 'JetBrains Mono', monospace;
-                font-size: 0.8rem;
-                color: var(--text-secondary);
-                line-height: 1.5;
-                flex: 1;
-            }
             .diag-row {
                 display: flex;
                 flex-direction: column;
@@ -93,15 +86,9 @@ pub fn BtcManageLayout(
             }
             .diag-value {
                 font-size: 0.75rem;
-                font-weight: bold;
                 color: var(--text);
             }
-            .action-footer {
-                font-family: 'JetBrains Mono', monospace;
-                font-size: 0.75rem;
-                color: var(--accent);
-                opacity: 0.8;
-            }
+        
         "#} }
 
         div { class: "terminal-viewport",
@@ -121,22 +108,23 @@ pub fn BtcManageLayout(
                                 class: "module-box",
                                 onclick: move |evt| on_create_click.call(evt),
                                 div { class: "section-label", "CREATE_BTC_WALLET" }
-                                div { class: "module-desc",
-                                    "Generate a 24 word Mnemonic to create a new wallet."
-                                }
                                div { 
                                     style: "display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; padding-top: 1rem; border-top: 1px solid var(--border);",
                                     div { class: "diag-row",
                                         div { class: "diag-label", "CURVE" },
-                                        div { class: "diag-value", "Secp256k1" }
+                                        div { class: "diag-value", "SECP256k1" }
+                                    }
+                                     div { class: "diag-row",
+                                        div { class: "diag-label", "OPTIONAL" },
+                                        div { class: "diag-value", "BIP39 (25th Word)" }
                                     }
                                      div { class: "diag-row",
                                         div { class: "diag-label", "DERIVATION_PATH" },
                                         div { class: "diag-value",  "m/84'/0'/0'/0/0" }
                                     }
-                                    div { class: "diag-row",
-                                        div { class: "diag-label", "NETWORK" },
-                                        div { class: "diag-value",  "MAINNET/BTC" }
+                                      div { class: "diag-row",
+                                        div { class: "diag-label", "SEED" },
+                                        div { class: "diag-value", "24_WORDS" }
                                     }
                                 }
                             }
@@ -147,22 +135,23 @@ pub fn BtcManageLayout(
                                 class: "module-box",
                                 onclick: move |evt| on_import_click.call(evt),
                                 div { class: "section-label", "IMPORT_BTC_WALLET" }
-                                div { class: "module-desc",
-                                    "Import your wallet with a 24-word seed."
-                                }
                                div { 
                                     style: "display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; padding-top: 1rem; border-top: 1px solid var(--border);",
-                                    div { class: "diag-row",
-                                        div { class: "diag-label", "REQUIREMENT" },
-                                        div { class: "diag-value", "24_WORDS" }
+                                      div { class: "diag-row",
+                                        div { class: "diag-label", "CURVE" },
+                                        div { class: "diag-value", "SECP256k1" }
                                     }
                                      div { class: "diag-row",
                                         div { class: "diag-label", "OPTIONAL" },
                                         div { class: "diag-value", "BIP39 (25th Word)" }
                                     }
-                                    div { class: "diag-row",
-                                        div { class: "diag-label", "NETWORK" },
-                                        div { class: "diag-value", "MAINNET/BTC" }
+                                     div { class: "diag-row",
+                                        div { class: "diag-label", "DERIVATION_PATH" },
+                                        div { class: "diag-value",  "m/84'/0'/0'/0/0" }
+                                    }
+                                   div { class: "diag-row",
+                                        div { class: "diag-label", "REQUIRED" },
+                                        div { class: "diag-value", "24_WORDS" }
                                     }
                                 }
                             }

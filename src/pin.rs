@@ -51,7 +51,7 @@ pub fn set_pin(pin: &str) -> Result<(), PinError> {
     let salt: [u8; 16] = rand::rng().random();
 
     let mut hasher = Sha256::new();
-    hasher.update(&salt);
+    hasher.update(salt);
     hasher.update(pin.as_bytes());
     let hash = hasher.finalize();
 

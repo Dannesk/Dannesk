@@ -9,7 +9,7 @@ pub fn SendAmountForm(
     amount_in: Signal<String>,
     fiat_in: Signal<String>,
     formatted_balance: String,
-    exchange_rate: f64,
+    exchange_rate: String,
     current_error: Option<String>,
     on_amount_input: EventHandler<FormEvent>,
     on_fiat_input: EventHandler<FormEvent>,
@@ -89,13 +89,13 @@ pub fn SendAmountForm(
 
             // DATA LOGS
             div { class: "data-log-row",
-                span { class: "log-key", "AVAILABLE_LIQUIDITY:" }
+                span { class: "log-key", "AVAILABLE_BALANCE:" }
                 span { "{formatted_balance} {asset_label}" }
             }
             if show_fiat {
                 div { class: "data-log-row",
                     span { class: "log-key", "EXCHANGE_RATE:" }
-                    span { "${exchange_rate} USD/{asset_label}" }
+                    span { "${exchange_rate} {asset_label}/USD" }
                 }
             }
 

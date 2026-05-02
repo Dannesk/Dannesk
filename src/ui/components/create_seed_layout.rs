@@ -62,16 +62,6 @@ pub fn CreateSeedForm(
                 font-weight: 500;
             }
 
-            .warning-banner {
-                background: rgba(var(--status-warn-rgb), 0.1);
-                color: var(--status-warn);
-                border-left: 3px solid var(--status-warn);
-                padding: 0.75rem 1rem;
-                margin-top: 1.5rem;
-                font-size: 0.7rem;
-                letter-spacing: 1px;
-            }
-
             .footer-nav { margin-top: 2rem; display: flex; justify-content: flex-start; align-items: center; gap: 2rem; }
         "#} }
 
@@ -89,11 +79,6 @@ pub fn CreateSeedForm(
                         span { class: "cell-text", "{word}" }
                     }
                 }
-            }
-
-            // 3. Warning
-            div { class: "warning-banner",
-                ">> CAUTION: Do not lose this seed phrase. If you lose the seed, you lose your coins."
             }
 
             // 4. Actions

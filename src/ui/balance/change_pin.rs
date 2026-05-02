@@ -41,12 +41,12 @@ pub fn view() -> Element {
                 position: relative;
             }
 
-            .back-button-container {
-              position: absolute;
+            .back-button-container {      
+                position: absolute;
                 top: 0.75rem;
                 left: 0.75rem;
                 cursor: pointer;
-                z-index: 10;
+                z-index: 10; 
             }
 
             .pin-main-container {

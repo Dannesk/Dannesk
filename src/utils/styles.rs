@@ -48,63 +48,64 @@ pub fn terminal_action(
     active: bool,
     on_click: impl FnMut(MouseEvent) + 'static,
 ) -> Element {
-    let symbol = if active { ":" } else { "." };
-    let symbol_color = if active {
-        "var(--accent)"
+    let button_bg = if active {
+        "var(--brand-blue)"
+    } else {
+        "var(--bg-grid)" 
+    };
+    let button_text = if active {
+        "var(--text)"
     } else {
         "var(--text-secondary)"
+    };
+    // Calculate the dynamic style outside the rsx! macro
+    let transform_style = if active {
+        "transform: translateY(-1px);"
+    } else {
+        ""
     };
 
     rsx! {
         button {
-            style: "background: transparent; border: none; cursor: pointer; white-space: nowrap; padding: 8px; display: flex; align-items: center;",
+            style: "background: {button_bg}; color: {button_text}; border: none; cursor: pointer; \
+                    white-space: nowrap; padding: 10px 24px; display: flex; \
+                    align-items: center; border-radius: 8px; font-size: 0.9rem; \
+                    font-weight: 600; \
+                    transition: background 0.15s, transform 0.1s; \
+                    {transform_style}",
             onclick: on_click,
 
-            span {
-                style: "font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; letter-spacing: 1.5px;",
-                span { style: "color: var(--text-secondary); opacity: 0.4;", "[" }
-                span { style: "color: {symbol_color};", "{symbol}" }
-                span { style: "color: var(--text); padding: 0 8px;", "{label}" }
-                span { style: "color: {symbol_color};", "{symbol}" }
-                span { style: "color: var(--text-secondary); opacity: 0.4;", "]" }
-            }
+            "{label}"
         }
     }
 }
 
-
-/// Identical to terminal_action but with green text (var(--status-ok)) when active
 pub fn nav_action(
     label: &str,
     active: bool,
     on_click: impl FnMut(MouseEvent) + 'static,
 ) -> Element {
-    let symbol = if active { ":" } else { "." };
-    let symbol_color = if active {
-        "var(--accent)"
+    let label_color = if active {
+        "var(--text)"
     } else {
         "var(--text-secondary)"
     };
-    let label_color = if active {
-        "var(--text-secondary)"
+    let label_weight = if active {
+        "600"
     } else {
-        "var(--text)"
+        "400"
     };
 
     rsx! {
         button {
-            style: "background: transparent; border: none; cursor: pointer; padding: 8px; display: flex; align-items: center;",
+            style: "background: transparent; border: none; cursor: pointer; \
+                    padding: 8px 12px; display: flex; align-items: center; \
+                    font-size: 0.9rem; \
+                    font-weight: {label_weight}; color: {label_color}; \
+                    transition: color 0.15s; margin-right: 12px;",
             onclick: on_click,
 
-            span {
-                style: "font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; letter-spacing: 1.5px;",
-                span { style: "color: var(--text-secondary); opacity: 0.4;", "[" }
-                span { style: "color: {symbol_color};", "{symbol}" }
-                span { style: "color: {label_color};  padding: 0 8px;", "{label}" }
-                span { style: "color: {symbol_color};", "{symbol}" }
-                span { style: "color: var(--text-secondary); opacity: 0.4;", "]" }
-            }
+            "{label}"
         }
     }
 }
-

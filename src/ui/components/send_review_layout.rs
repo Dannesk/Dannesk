@@ -29,7 +29,6 @@ pub fn render_send_review(
                 display: grid;
                 grid-template-columns: 1fr;
                 gap: 1px;
-                background: var(--border); 
                 border: 1px solid var(--border);
                 width: 100%;
             }
@@ -37,7 +36,6 @@ pub fn render_send_review(
             .summary-row {
                 display: grid;
                 grid-template-columns: 140px 1fr; 
-                background: var(--bg-grid);
                 padding: 1.25rem 1rem;
                 align-items: start;
             }

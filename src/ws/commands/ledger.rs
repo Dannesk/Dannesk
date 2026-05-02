@@ -140,10 +140,11 @@ pub async fn process_response(
 ) -> Result<Option<(u32, String)>, String> {
     match message {
         Message::Text(text) => {
-            if let Ok(data) = serde_json::from_str::<Value>(&text) {
-                if data.get("command").and_then(|c| c.as_str()) == Some("get_ledger_data") {
-                     return parse_ledger_response(data, current_wallet).await.map(Some);
-                }
+                    if let Ok(data) = serde_json::from_str::<Value>(&text)
+           && data.get("command").and_then(|c| c.as_str()) == Some("get_ledger_data") {
+           return parse_ledger_response(data, current_wallet).await.map(Some);
+
+                
             }
             Ok(None)
         }

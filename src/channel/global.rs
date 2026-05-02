@@ -6,6 +6,7 @@ pub enum Tab {
     Balance,
     Xrp,
     Btc,
+    Rates,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

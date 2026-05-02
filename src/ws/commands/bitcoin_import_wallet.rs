@@ -20,15 +20,16 @@ pub async fn execute(
     if let Some(wallet) = cmd.wallet {
         let msg_json = json!({"command": "import_bitcoin_wallet", "wallet": wallet});
 
-        if let Some(tx) = CRYPTO_OUTGOING_TX.get() {
-            if tx.send(Message::text(msg_json.to_string())).await.is_err() {
-                cleanup_failed_import(); 
+         if let Some(tx) = CRYPTO_OUTGOING_TX.get()
+       && tx.send(Message::text(msg_json.to_string())).await.is_err() {
+             cleanup_failed_import(); 
+
                 let _ = CHANNEL.progress_tx.send(Some(ProgressState {
                     progress: 1.0,
                     message: FAILED.to_string(),
                 }));
                 return Err(FAILED.to_string());
-            }
+            
         }
         Ok(())
     } else {

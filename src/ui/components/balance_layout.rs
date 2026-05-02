@@ -1,9 +1,9 @@
-use crate::context::GlobalContext; // Added context import
+use crate::context::GlobalContext;
 use crate::utils::reserves::XrpBalanceInfo;
 use dioxus_native::prelude::*;
 
-#[derive(Clone, PartialEq)]  
-pub enum LedgerInfo {       
+#[derive(Clone, PartialEq)]
+pub enum LedgerInfo {
     None,
     Xrp(XrpBalanceInfo),
 }
@@ -14,8 +14,8 @@ pub fn BalanceLayout(
     int_part: String,
     frac_part: String,
     formatted_raw_amount: String,
-    status_color: String,     // This is for encryption status
-    status_text: String,      // This is for encryption status
+    status_color: String,
+    status_text: String,
     network_protocol: String,
     send_btn: Element,
     receive_btn: Element,
@@ -24,184 +24,174 @@ pub fn BalanceLayout(
     ledger_info: LedgerInfo,
     logo: Element,
 ) -> Element {
-    // 1. Grab Global Context
     let global = use_context::<GlobalContext>();
-    
-    // 2. Read Crypto Node Status
+
     let crypto_connected = *global.crypto_ws_status.read();
-    let node_text = if crypto_connected { "CONNECTED" } else { "DISCONNECTED" };
-    let node_color = if crypto_connected { "var(--status-ok)" } else { "var(--status-warn)" };
+    let node_text = if crypto_connected { "Connected" } else { "Disconnected" };
+    let node_bg = if crypto_connected { "var(--brand-blue)" } else { "var(--status-warn)" };
+
+    let (xrp_status_text, xrp_status_bg) = if let LedgerInfo::Xrp(info) = &ledger_info {
+        if info.is_active { ("Active", "var(--brand-blue)") } else { ("Inactive", "var(--status-warn)") }
+    } else { ("", "") };
+
+    // Strict nowrap pill for native rendering stability
+    let pill_style = "padding: 4px 12px; border-radius: 9999px; font-size: 0.8em; font-weight: 600; color: var(--text); white-space: nowrap; display: inline-block; width: fit-content;";
 
     rsx! {
         style { {r#"
-            .manage-container {
+            /* THE FIX 1: The outer viewport shock absorber */
+            .balance-outer-viewport {
+                display: flex;
+                flex-direction: row;
+                width: 100%;
+                flex: 1;
+                align-items: center; 
+                justify-content: center;
+            }
+            .modern-container {
                 display: flex;
                 flex-direction: column;
                 width: 100%;
-                max-width: 800px;
-                margin: 0 auto;
-                font-family: 'JetBrains Mono', monospace;
+                max-width: 900px;
+                font-family: 'Inter', sans-serif;
+                gap: 1rem;
             }
-            .balance-hero {
-                padding: 2rem 0;
-                border-bottom: 1px solid var(--border);
-                margin-bottom: 2rem;
+            .balance-card {
+                padding: 1.5rem;
+                background: var(--bg-faint);
+                border-radius: 12px;
+                border: 1px solid var(--border);
             }
-            .action-grid {
+            .dashboard-grid {
                 display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 2rem;
-                margin-bottom: 2rem;
+                grid-template-columns: 1.1fr 0.9fr;
+                gap: 1rem;
+                width: 100%; /* Force grid to respect container width */
             }
-            .action-section {
+            .column {
                 display: flex;
                 flex-direction: column;
                 gap: 1rem;
+                min-width: 0; /* THE FIX 2: Prevents Taffy from freaking out during fr calculations */
+            }
+            .content-box {
+                padding: 1.25rem;
+                background: var(--bg-faint);
+                border-radius: 12px;
+                border: 1px solid var(--border);
             }
             .section-label {
-                font-size: 0.65rem;
+                font-size: 0.75rem;
                 color: var(--text-secondary);
-                letter-spacing: 2px;
-                border-left: 2px solid var(--accent);
-                padding-left: 8px;
-                margin-bottom: 0.5rem;
-            }
-            .info-box {
-                background: var(--bg-grid);
-                border: 1px solid var(--border);
-                padding: 1rem;
-                display: flex;
-                flex-direction: column;
-                gap: 0.5rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                margin-bottom: 1rem;
+                white-space: nowrap;
             }
             .info-row {
                 display: flex;
                 justify-content: space-between;
-                font-size: 0.75rem;
+                align-items: center;
+                font-size: 0.85rem;
+                margin-bottom: 0.6rem;
+                white-space: nowrap;
             }
             .button-group {
                 display: flex;
-                gap: 10px;
+                gap: 8px;
                 flex-wrap: wrap;
             }
-            .system-footer {
-                margin-top: 2rem;
-                padding: 1.5rem;
-                background: var(--bg-grid);
-                border: 1px solid var(--border);
-                display: flex;
-                flex-direction: column;
-                gap: 1rem;
-            }
-            .diag-row {
-                display: flex;
-                flex-direction: column;
-                gap: 4px;
-            }
             .diag-label {
-                font-size: 0.6rem;
+                font-size: 0.75rem;
                 color: var(--text-secondary);
-                opacity: 0.7;
-                letter-spacing: 1px;
+                margin-bottom: 2px;
+                white-space: nowrap;
             }
             .diag-value {
-                font-size: 0.8rem;
-                font-weight: bold;
-                letter-spacing: 1px;
+                font-size: 0.9rem;
+                font-weight: 600;
+                white-space: nowrap;
             }
+            .monospace-data { font-family: 'JetBrains Mono', monospace; white-space: nowrap; }
         "#} }
 
-        div { class: "manage-container",
-            // 1. HERO BALANCE
-            div { class: "balance-hero",
-                div {
-                    style: "font-size: 0.7rem; color: var(--text-secondary); opacity: 0.6; margin-bottom: 0.5rem;",
-                    "ASSET_VALUATION // {asset_ticker}"
-                }
-                div {
-                    style: "font-size: 3.5rem; font-weight: 800; display: flex; align-items: baseline;",
-                    span { style: "font-size: 0.4em; color: var(--text-secondary); margin-right: 0.5rem;", "USD" }
-                    span { "{int_part}" }
-                    span { style: "font-size: 0.4em; color: var(--text-secondary);", "{frac_part}" }
-                }
-                div {
-                    style: "color: var(--accent); font-size: 0.9rem; display: flex; align-items: center; gap: 8px;",
-                    span { "{formatted_raw_amount} {asset_ticker}" }
-                    div { {logo} }
-                }
-            }
-
-            // 2. ACTION GRID
-            div { class: "action-grid",
-                div { class: "action-section",
-                    div { class: "section-label", "FINANCIAL_OPERATIONS" }
-                    div { class: "button-group", {send_btn}, {receive_btn} }
-                }
-                div { class: "action-section",
-                    div { class: "section-label", "VAULT_MANAGEMENT" }
-                    div { class: "button-group",
-                        {purge_btn},
-                        if let Some(btn) = delete_btn { {btn} }
+        // Box within a box wrapper
+        div { class: "balance-outer-viewport",
+            div { class: "modern-container",
+                
+                // HERO
+                div { class: "balance-card",
+                    div { style: "font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.25rem; white-space: nowrap;",
+                        "{asset_ticker} Portfolio"
+                    }
+                    div {
+                        style: "font-size: 3rem; font-weight: 700; display: flex; align-items: baseline; white-space: nowrap;",
+                        span { style: "font-size: 0.35em; color: var(--text-secondary); margin-right: 0.5rem;", "USD" }
+                        span { class: "monospace-data", "{int_part}" }
+                        span { class: "monospace-data", style: "font-size: 0.35em; color: var(--text-secondary);", "{frac_part}" }
+                    }
+                    div {
+                        style: "color: var(--accent); font-size: 0.9rem; display: flex; align-items: center; gap: 8px; margin-top: 4px; white-space: nowrap;",
+                        span { class: "monospace-data", "{formatted_raw_amount} {asset_ticker}" }
+                        div { {logo} }
                     }
                 }
-            }
 
-            // 3. LEDGER CONSTRAINTS
-            if let LedgerInfo::Xrp(info) = ledger_info {
-                div { class: "action-section", style: "margin-bottom: 2rem;",
-                    div { class: "section-label", "LEDGER_CONSTRAINTS" }
-                    div { class: "info-box",
-                        div { class: "info-row",
-                            span { style: "color: var(--text-secondary);", "AVAILABLE:" }
-                            span { style: "color: var(--accent); font-weight: bold;", "{info.available:.6} XRP" }
+                // GRID
+                div { class: "dashboard-grid",
+                    div { class: "column",
+                        div { class: "content-box",
+                            div { class: "section-label", "Financial Operations" }
+                            div { class: "button-group", {send_btn}, {receive_btn} }
                         }
-                        div { class: "info-row",
-                            span { style: "color: var(--text-secondary);", "RESERVE:" }
-                            span { style: "color: var(--text); font-weight: bold;", "{info.total_reserve:.2} XRP" }
-                        }
-                        div { class: "info-row",
-                            span { style: "color: var(--text-secondary);", "STATUS:" }
-                            if info.is_active {
-                                span { style: "color: var(--status-ok); font-weight: bold;", "ACTIVE" }
-                            } else {
-                                span { style: "color: var(--status-warn); font-weight: bold;", "INACTIVE" }
+                        div { class: "content-box",
+                            div { class: "section-label", "Vault Management" }
+                            div { class: "button-group",
+                                {purge_btn},
+                                if let Some(btn) = delete_btn { {btn} }
                             }
                         }
                     }
-                }
-            }
 
-            // 4. SYSTEM STATUS FOOTER
-            div { class: "system-footer",
-                div {
-                    style: "display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;",
-                    
-                    // Encryption Status
-                    div { class: "diag-row",
-                        div { class: "diag-label", "SYSTEM_ENCRYPTION_STATUS" }
-                        div {
-                            class: "diag-value",
-                            style: "color: {status_color}",
-                            "{status_text}"
+                    div { class: "column",
+                        if let LedgerInfo::Xrp(info) = ledger_info {
+                            div { class: "content-box",
+                                div { class: "section-label", "Ledger Data" }
+                                div { class: "info-row",
+                                    // Bulletproofing these spans with explicit nowrap
+                                    span { style: "color: var(--text-secondary); white-space: nowrap;", "Available" }
+                                    span { class: "monospace-data", "{info.available:.4} XRP" }
+                                }
+                                div { class: "info-row",
+                                    span { style: "color: var(--text-secondary); white-space: nowrap;", "Reserve" }
+                                    span { class: "monospace-data", "{info.total_reserve:.2} XRP" }
+                                }
+                                div { class: "info-row", style: "margin-top: 4px;",
+                                    span { style: "color: var(--text-secondary); white-space: nowrap;", "Status" }
+                                    span { style: "background-color: {xrp_status_bg}; {pill_style}", "{xrp_status_text}" }
+                                }
+                            }
+                        }
+
+                        div { class: "content-box",
+                            div { class: "section-label", "System Diagnostics" }
+                            div { style: "display: flex; flex-direction: column; gap: 12px;",
+                                div {
+                                    div { class: "diag-label", "Encryption" }
+                                    div { class: "diag-value", style: "color: {status_color}", "{status_text}" }
+                                }
+                                div {
+                                    div { class: "diag-label", "Node Connection" }
+                                    span { style: "background-color: {node_bg}; {pill_style}", "{node_text}" }
+                                }
+                                div { style: "border-top: 1px solid var(--border); padding-top: 8px;",
+                                    div { class: "diag-label", "Protocol" }
+                                    div { class: "diag-value", style: "color: var(--accent)", "{network_protocol}" }
+                                }
+                            }
                         }
                     }
-
-                    // Node Connection (New Addition)
-                    div { class: "diag-row",
-                        div { class: "diag-label", "NODE_CONNECTION" }
-                        div {
-                            class: "diag-value",
-                            style: "color: {node_color}",
-                            "{node_text}"
-                        }
-                    }
-                }
-                
-                div {
-                    style: "border-top: 1px solid var(--border); padding-top: 10px;",
-                    class: "diag-row",
-                    div { class: "diag-label", "NETWORK_PROTOCOL" }
-                    div { class: "diag-value", style: "color: var(--accent)", "{network_protocol}" }
                 }
             }
         }

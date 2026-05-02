@@ -167,10 +167,10 @@ pub async fn process_response(
 ) -> Result<Option<Vec<Utxo>>, String> {
     match message {
         Message::Text(text) => {
-            if let Ok(data) = serde_json::from_str::<Value>(&text) {
-                if data.get("command").and_then(|c| c.as_str()) == Some("get_bitcoin_utxo_data") {
+            if let Ok(data) = serde_json::from_str::<Value>(&text)
+              && data.get("command").and_then(|c| c.as_str()) == Some("get_bitcoin_utxo_data") {
                     return parse_utxo_response(data).await.map(Some);
-                }
+                
             }
             Ok(None)
         }

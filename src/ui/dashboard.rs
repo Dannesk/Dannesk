@@ -2,7 +2,7 @@
 use crate::channel::{Tab, Theme};
 use crate::context::GlobalContext;
 use crate::ui::{
-    balance, managebtc, managexrp, progressbar::ProgressBar,
+    balance, managebtc, ticker, managexrp, progressbar::ProgressBar,
 };
 // Removed Sidebar imports entirely
 use dioxus_native::prelude::*;
@@ -43,6 +43,8 @@ fn TabContentSlot() -> Element {
                 Tab::Balance => rsx! { balance::render_balance {} },
                 Tab::Xrp => rsx! { managexrp::render_manage_xrp {} },
                 Tab::Btc => rsx! { managebtc::render_manage_btc {} },
+                Tab::Rates => rsx! { ticker::render_ticker {} },
+
             }
         }
     }
@@ -88,6 +90,12 @@ fn BottomDock() -> Element {
                 is_dark,
                 onclick: move |_| { let _ = crate::channel::CHANNEL.selected_tab_tx.send(Tab::Btc); }
             }
+             DockButton {
+                label: "RATES".to_string(),
+                is_active: current_tab == Tab::Rates,
+                is_dark,
+                onclick: move |_| { let _ = crate::channel::CHANNEL.selected_tab_tx.send(Tab::Rates); }
+            }
         }
     }
 }
@@ -100,7 +108,7 @@ fn DockButton(
 ) -> Element {
     let (text_color, bg_color) = if is_dark {
         if is_active {
-            ("#ffffff", "#141414")
+            ("#E2E8F0", "#FFFFFF08")
         } else {
             ("#737373", "transparent")
         }

@@ -3,7 +3,7 @@ use crate::bridge::btc_wallet_operations::BitcoinWalletOperations;
 use crate::utils::add_commas;
 use crate::ui::components::balance_layout::{BalanceLayout, LedgerInfo};
 use crate::utils::bitcoin::BitcoinLogo;
-use crate::utils::styles::terminal_action;
+use crate::utils::styles::nav_action;
 use dioxus_native::prelude::*; // Ensure path is correct
 
 #[component]
@@ -57,7 +57,7 @@ pub fn view() -> Element {
     let btc_logo = rsx! { BitcoinLogo { size: "14".to_string() } };
 
     // --- TERMINAL ACTIONS ---
-    let send_btn = terminal_action("SEND", true, move |_| {
+    let send_btn = nav_action("SEND", true, move |_| {
         btc_modal.with_mut(|state| {
             state.last_view = Some(crate::channel::BtcActiveView::Btc);
             state.view_type = crate::channel::BtcActiveView::Send;
@@ -74,14 +74,14 @@ pub fn view() -> Element {
         });
     });
 
-    let receive_btn = terminal_action("RECEIVE", true, move |_| {
+    let receive_btn = nav_action("RECEIVE", true, move |_| {
         btc_modal.with_mut(|state| {
             state.last_view = Some(crate::channel::BtcActiveView::Btc);
             state.view_type = crate::channel::BtcActiveView::Receive;
         });
     });
 
-    let purge_btn = terminal_action("PURGE", true, {
+    let purge_btn = nav_action("PURGE", true, {
         let ws_tx = global.ws_tx.clone();
         let addr = address.clone();
         move |_| {
@@ -91,7 +91,7 @@ pub fn view() -> Element {
         }
     });
 
-    let delete_btn = terminal_action("DELETE_KEY", true, {
+    let delete_btn = nav_action("DELETE_KEY", true, {
         let addr = address.clone();
         move |_| {
             if let Some(a) = addr.clone() {

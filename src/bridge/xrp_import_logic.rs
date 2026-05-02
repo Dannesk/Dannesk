@@ -74,8 +74,8 @@ impl XRPImportLogic {
                 let pk_bytes = public_key.inner.serialize(); 
 
                 // 5. Hash to Account ID (SHA256 then RIPEMD160)
-                let sha_hash = Sha256::digest(&pk_bytes);
-                let rip_hash = Ripemd160::digest(&sha_hash);
+                let sha_hash = Sha256::digest(pk_bytes);
+                let rip_hash = Ripemd160::digest(sha_hash);
 
                 // 6. Encode to XRP Classic Address (Base58Check with XRP Alphabet)
                 let mut account_id = [0u8; 21];

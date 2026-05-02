@@ -71,8 +71,8 @@ impl XRPCreateLogic {
                 let pk_bytes = public_key.inner.serialize(); 
 
                 // Generate XRP Account ID
-                let sha_hash = Sha256::digest(&pk_bytes);
-                let rip_hash = Ripemd160::digest(&sha_hash);
+                let sha_hash = Sha256::digest(pk_bytes);
+                let rip_hash = Ripemd160::digest(sha_hash);
 
                 let mut account_id = [0u8; 21];
                 account_id[0] = 0x00; 

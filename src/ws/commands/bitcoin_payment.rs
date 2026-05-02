@@ -183,7 +183,7 @@ pub async fn construct_transaction(
     }
 
     // Apply witnesses
-    for (input, witness) in tx.input.iter_mut().zip(witnesses.into_iter()) {
+    for (input, witness) in tx.input.iter_mut().zip(witnesses) {
         input.witness = witness;
     }
 

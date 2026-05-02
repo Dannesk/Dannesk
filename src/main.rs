@@ -29,7 +29,6 @@ mod ws;
 mod enterpin; 
 mod update; 
 mod bridge; 
-mod scaling;
 
 use crate::channel::{WSCommand, Theme};
 use crate::context::GlobalContext;
@@ -40,7 +39,6 @@ use crate::theme::{DARK_CSS, LIGHT_CSS};
 use crate::ws::{run_crypto_websocket, run_exchange_websocket};
 use crate::update::UpdatePrompt;
 use crate::enterpin::PinScreen;
-use crate::scaling::{get_system_scale, SCALE_FACTOR};
 
 static UI_COMMANDS_TX: OnceLock<mpsc::Sender<WSCommand>> = OnceLock::new();
 
@@ -54,11 +52,6 @@ enum AppState {
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     startup::init_globals();
-
-    // GET AND PRINT SCALE FACTOR
-    let scale = get_system_scale();
-    let _ = SCALE_FACTOR.set(scale);
-    println!("SCALE FACTOR: {}", scale);
 
     println!("Starting main - before init_startup");
 
@@ -126,9 +119,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let window_icon: Option<Icon> = None;
 
     #[cfg(target_os = "windows")]
-    let default_size = LogicalSize::new(1040.0, 640.0);
+    let default_size = LogicalSize::new(1120.0, 640.0);
     #[cfg(target_os = "linux")]
-    let default_size = LogicalSize::new(1300.0, 800.0);
+    let default_size = LogicalSize::new(1400.0, 800.0);
 
     #[cfg(target_os = "linux")]
     let mut window_attr = WindowAttributes::default()

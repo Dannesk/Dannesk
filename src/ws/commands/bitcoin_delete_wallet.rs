@@ -13,10 +13,10 @@ pub async fn execute(
     if let Some(wallet) = cmd.wallet {
         let msg_json = json!({"command": "delete_bitcoin_wallet", "wallet": wallet});
 
-        if let Some(tx) = CRYPTO_OUTGOING_TX.get() {
-            if tx.send(Message::text(msg_json.to_string())).await.is_err() {
+  if let Some(tx) = CRYPTO_OUTGOING_TX.get()
+           && tx.send(Message::text(msg_json.to_string())).await.is_err() {
                 return Err(FAILED.to_string());
-            }
+            
         }
         Ok(())
     } else {

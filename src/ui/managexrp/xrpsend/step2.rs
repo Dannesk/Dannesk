@@ -157,7 +157,7 @@ pub fn view() -> Element {
             fiat_in,
             // We pass the spendable balance here so the UI shows exactly what is sendable.
             formatted_balance: format_token_amount(spendable_balance, 6),
-            exchange_rate,
+            exchange_rate: format!("{:.8}", exchange_rate),
             current_error,
             on_amount_input,
             on_fiat_input,

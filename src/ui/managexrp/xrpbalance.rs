@@ -4,7 +4,7 @@ use crate::bridge::xrp_wallet_operations::WalletOperations;
 use crate::utils::add_commas;
 use crate::ui::components::balance_layout::{BalanceLayout, LedgerInfo};
 use crate::utils::reserves::XrpBalanceInfo;
-use crate::utils::styles::terminal_action;
+use crate::utils::styles::nav_action;
 use crate::utils::xrp::{XrpLogo, XrpLogoWhite};
 use crate::channel::Theme;
 
@@ -62,7 +62,7 @@ pub fn render_xrp_balance() -> Element {
     };
 
     // ACTIONS
-    let send_btn = terminal_action("SEND", true, move |_| {
+    let send_btn = nav_action("SEND", true, move |_| {
         xrp_modal.with_mut(|s| {
             s.last_view = Some(crate::channel::ActiveView::Xrp);
             s.view_type = crate::channel::ActiveView::Send;
@@ -78,14 +78,14 @@ pub fn render_xrp_balance() -> Element {
         });
     });
 
-    let receive_btn = terminal_action("RECEIVE", true, move |_| {
+    let receive_btn = nav_action("RECEIVE", true, move |_| {
         xrp_modal.with_mut(|s| {
             s.last_view = Some(crate::channel::ActiveView::Xrp);
             s.view_type = crate::channel::ActiveView::Receive;
         });
     });
 
-    let purge_btn = terminal_action("PURGE", true, {
+    let purge_btn = nav_action("PURGE", true, {
         let ws_tx = global.ws_tx.clone();
         let addr = address.clone();
         move |_| {
@@ -95,7 +95,7 @@ pub fn render_xrp_balance() -> Element {
         }
     });
 
-    let delete_btn = terminal_action("DELETE_KEY", true, {
+    let delete_btn = nav_action("DELETE_KEY", true, {
         let addr = address.clone();
         move |_| {
             if let Some(a) = addr.clone() {

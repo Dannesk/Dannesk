@@ -1,7 +1,7 @@
 use crate::channel::{ActiveView, Trade, XrpImport};
 use crate::context::{EuroContext, RlusdContext, SgdContext, XrpContext};
 use crate::utils::reserves::get_xrp_balance_info;
-use crate::utils::styles::{nav_action, terminal_action};
+use crate::utils::styles::{nav_action};
 // Import the newly created layout component
 use crate::ui::components::xrp_manage_layout::XrpManageLayout;
 use bip39::{Language, Mnemonic};
@@ -76,7 +76,7 @@ pub fn render_manage_xrp() -> Element {
         xrp_modal.with_mut(|s| s.view_type = ActiveView::Sgd)
     });
 
-    let trade_btn = terminal_action("DEX", matches!(view_type, ActiveView::Trade), move |_| {
+    let trade_btn = nav_action("DEX", matches!(view_type, ActiveView::Trade), move |_| {
         xrp_modal.with_mut(|state| {
             state.last_view = Some(ActiveView::Xrp);
             state.view_type = ActiveView::Trade;
@@ -90,7 +90,7 @@ pub fn render_manage_xrp() -> Element {
         });
     });
 
-  let history_btn = terminal_action("TX_LOG", matches!(view_type, ActiveView::Transactions), move |_| {
+  let history_btn = nav_action("TX_LOG", matches!(view_type, ActiveView::Transactions), move |_| {
     xrp_modal.with_mut(|state| { 
         state.last_view = Some(ActiveView::Xrp);
         state.view_type = ActiveView::Transactions;

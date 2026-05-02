@@ -38,15 +38,16 @@ pub async fn execute(
     if let Some(wallet) = cmd.wallet {
         let msg_json = json!({"command": "import_wallet", "wallet": wallet});
 
-        if let Some(tx) = CRYPTO_OUTGOING_TX.get() {
-            if tx.send(Message::text(msg_json.to_string())).await.is_err() {
-                cleanup_failed_import(); // <--- Cleanup on Send failure
+        if let Some(tx) = CRYPTO_OUTGOING_TX.get()
+            && tx.send(Message::text(msg_json.to_string())).await.is_err() {
+             cleanup_failed_import(); // <--- Cleanup on Send failure
+
                 let _ = CHANNEL.progress_tx.send(Some(ProgressState {
                     progress: 1.0,
                     message: FAILED.to_string(),
                 }));
                 return Err(FAILED.to_string());
-            }
+            
         }
         Ok(())
     } else {
@@ -68,7 +69,7 @@ pub async fn process_response(message: Message, _current_wallet: &str) -> Result
                 format!("Failed to parse JSON: {}", e)
             })?;
 
-            // Check if server actually confirmed the import
+           
             if let Some(wallet) = data.get("wallet").and_then(|w| w.as_str()) {
                
 

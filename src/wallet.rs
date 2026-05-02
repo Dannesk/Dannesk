@@ -27,9 +27,11 @@ pub fn load_wallets(commands_tx: mpsc::Sender<WSCommand>) {
     }
 
     // Load XRP wallet from xrp.json
-    if let Ok(path) = json_storage::get_config_path("xrp.json") {
-        if path.exists() {
-            if let Ok(json) = json_storage::read_json::<Value>("xrp.json") {
+      if let Ok(path) = json_storage::get_config_path("xrp.json")
+    && path.exists()
+        && let Ok(json) = json_storage::read_json::<Value>("xrp.json") {
+
+
                 let address = json
                     .get("address")
                     .and_then(|v| v.as_str())
@@ -66,14 +68,14 @@ pub fn load_wallets(commands_tx: mpsc::Sender<WSCommand>) {
                     };
                     let _ = commands_tx.try_send(command);
                 }
-            }
-        }
     }
 
     // Load Bitcoin wallet from btc.json
-    if let Ok(path) = json_storage::get_config_path("btc.json") {
-        if path.exists() {
-            if let Ok(json) = json_storage::read_json::<Value>("btc.json") {
+    if let Ok(path) = json_storage::get_config_path("btc.json")
+        && path.exists()
+  && let Ok(json) = json_storage::read_json::<Value>("btc.json") {
+
+
                 let address = json
                     .get("address")
                     .and_then(|v| v.as_str())
@@ -110,7 +112,5 @@ pub fn load_wallets(commands_tx: mpsc::Sender<WSCommand>) {
                     };
                     let _ = commands_tx.try_send(command);
                 }
-            }
-        }
     }
 }

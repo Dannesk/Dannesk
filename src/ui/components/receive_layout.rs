@@ -1,5 +1,5 @@
 // src/utils/receive_layout.rs
-use crate::utils::styles::terminal_action;
+use crate::utils::styles; 
 use arboard::Clipboard;
 use dioxus_native::prelude::*;
 use qrcode::{QrCode, types::Color};
@@ -12,7 +12,6 @@ pub fn ReceiveAddressLayout(
     is_dark: bool,
     on_back: EventHandler<MouseEvent>,
 ) -> Element {
-    // Fast vector QR code (Vello/Blitz renders instantly)
     let qr_modules = use_memo(use_reactive(&address, move |addr| {
         if addr == "No Address" {
             return (0u32, vec![]);
@@ -51,10 +50,18 @@ pub fn ReceiveAddressLayout(
                 align-items: center;
                 justify-content: center;
                 width: 100%;
+                position: relative;
                 font-family: 'JetBrains Mono', monospace;
             }
+            .back-button-container {
+                position: absolute;
+                top: 0.75rem;
+                left: 0.75rem;
+                cursor: pointer;
+                z-index: 10;
+            }
             .qr-img {
-                width: 280px !important;      /* big & reliable */
+                width: 280px !important;
                 height: 280px !important;
                 margin-bottom: 2rem;
                 image-rendering: crisp-edges;
@@ -75,19 +82,24 @@ pub fn ReceiveAddressLayout(
         "#} }
 
         div { class: "terminal-receive",
+
+            // TOP LEFT BACK ICON
+            div {
+                class: "back-button-container",
+                onclick: move |e| on_back.call(e),
+                styles::previous_icon_button { text_color: "#fff".to_string() }
+            }
+
             div {
                 style: "margin-bottom: 2rem; text-align: center;",
                 div { style: "font-size: 0.65rem; color: var(--accent); letter-spacing: 2px;", "RECEIVE_ADDRESS" }
                 div { style: "font-size: 1.2rem; font-weight: bold; color: var(--text);", "{network_name}" }
             }
 
-            // ← Big, instant, perfect QR
             svg {
                 class: "qr-img",
                 view_box: "-4 -4 {grid_size + 8} {grid_size + 8}",
                 preserve_aspect_ratio: "xMidYMid meet",
-
-                // Quiet zone (4 modules padding, looks professional)
                 rect {
                     x: "-4",
                     y: "-4",
@@ -95,24 +107,19 @@ pub fn ReceiveAddressLayout(
                     height: "{grid_size + 8}",
                     fill: "{bg_color}",
                 }
-
                 for (x, y) in dark_modules {
                     rect {
-                        x: "{x}",
-                        y: "{y}",
-                        width: "1",
-                        height: "1",
-                        fill: "{module_color}",
+                        x: "{x}", y: "{y}", width: "1", height: "1", fill: "{module_color}",
                     }
                 }
             }
 
             div { class: "address-display", "{address}" }
 
+            // TERMINAL BUTTON FOR COPY
             div {
                 style: "display: flex; gap: 1rem;",
-                {terminal_action("<<_BACK", true, move |e| on_back.call(e))}
-                {terminal_action("COPY_TO_CLIPBOARD", true, copy_action)}
+                {styles::terminal_action("COPY_TO_CLIPBOARD", true, copy_action)}
             }
 
             div {
