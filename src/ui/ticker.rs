@@ -124,7 +124,7 @@ pub fn render_ticker() -> Element {
             }
             .item-value { 
                 font-size: 0.9rem; 
-                color: var(--accent); 
+                color: var(--text); 
                 font-family: 'JetBrains Mono', monospace;
                 white-space: nowrap; 
             }

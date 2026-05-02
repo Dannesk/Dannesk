@@ -1,30 +1,45 @@
 
 // src/styles/theme.rs
+//brand-blue is not actually blue. I kept name to avoid breaking codebase.
 
 pub const DARK_CSS: &str = r#"
 :root, .theme-root {
-    --bg-primary: #101217;
-    --bg-secondary: #000000;     
-    --bg-card: rgba(240, 248, 255, 0.04); 
-    --bg-faint: rgba(240, 248, 255, 0.02);         
-    --bg-grid: rgba(240, 248, 255, 0.02); 
-    --border: rgba(240, 248, 255, 0.08);
-    --input-border: rgba(240, 248, 255, 0.12);
-    --text: #F0F8FF;
-    --text-secondary: #F0F8FFBF;
-    --btn: rgba(240, 248, 255, 0.06);
-    --btn-hover: #F0F8FF;
-    --btn-active: #F0F8FFA6;
-    --brand-blue: #0066ff;
-    --brand-blue-text: #0066ff;
-    --accent: #F0F8FFD9;
-    --selection: rgba(240, 248, 255, 0.12);
-    --input-bg: rgba(0, 0, 0, 0.25);
-    --focus-ring: #0066ff;
-    --status-ok: #10b981;
-    --status-warn: #ef4444;
-    --alice-blue-transparency-60: #F0F8FF99;
-    --alice-blue-transparency-30: #F0F8FF4D;
+    /* The Foundations */
+    --bg-primary: #202225;
+    --bg-secondary: #18191C;      /* Replaced black with a deep, nested charcoal */
+    --input-bg: #1A1C1F;          /* Darker than primary to feel "inset" */
+    
+    /* Surfaces & Layers */
+    --bg-card: rgba(185, 187, 190, 0.05);  
+    --bg-faint: rgba(185, 187, 190, 0.02);         
+    --bg-grid: rgba(185, 187, 190, 0.02); 
+    
+    /* Borders & Dividers */
+    --border: rgba(185, 187, 190, 0.1);
+    --input-border: rgba(185, 187, 190, 0.15);
+    
+    /* Typography */
+    --text: #F0F8FF;              /* Keeping Alice Blue for high-contrast readability */
+    --text-secondary: #B9BBBE;    
+    
+    /* Buttons */
+    --btn: rgba(185, 187, 190, 0.1);
+    --btn-hover: #B9BBBE;         
+    --btn-active: #919396;        
+    
+    /* Brand Colors (Keeping names as requested) */
+    --brand-blue: #919396;       
+    --accent: #B9BBBE;           
+    
+    /* Interactions */
+    --selection: rgba(185, 187, 190, 0.2);
+    --focus-ring: #72767D;       
+    
+    /* Status */
+    --status-ok: #43B581;         
+    --status-warn: #F04747;       
+    
+
 }
 .theme-root {
     background: var(--bg-primary);
@@ -85,9 +100,7 @@ pub const LIGHT_CSS: &str = r#"
     /* Status: Kept functional */
     --status-ok: #16A34A;        
     --status-warn: #ef4444;  
-    
-    --alice-blue-transparency-60: #F0F8FF99
-    --alice-blue-transparency-30: #F0F8FF4D
+
 }
 
 .theme-root {
